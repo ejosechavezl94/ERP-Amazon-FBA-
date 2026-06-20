@@ -8,11 +8,12 @@ import Suppliers from './components/Suppliers';
 import PurchaseOrders from './components/PurchaseOrders';
 import Documents from './components/Documents';
 import Tasks from './components/Tasks';
+import Settings from './components/Settings';
 import GlobalSearch from './components/GlobalSearch';
 
 import { 
   LayoutDashboard, Package, TrendingUp, Users, ShoppingCart, 
-  FileText, CheckSquare, Settings, LogOut, Sun, Moon, Search 
+  FileText, CheckSquare, Settings as SettingsIcon, LogOut, Sun, Moon, Search 
 } from 'lucide-react';
 
 function App() {
@@ -22,18 +23,33 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // 1. Session and Auth State management
+  // 1. Session and Auth State management with 2FA check
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchUserProfile(session.user.id);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) {
+        // Enforce 2FA session verification check on reload
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+          // User is enrolled in MFA but the session is only AAL1. Force re-auth.
+          setSession(null);
+        } else {
+          setSession(session);
+          fetchUserProfile(session.user.id);
+        }
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
-        fetchUserProfile(session.user.id);
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+          setSession(null);
+        } else {
+          setSession(session);
+          fetchUserProfile(session.user.id);
+        }
       } else {
+        setSession(null);
         setProfile(null);
       }
     });
@@ -165,6 +181,14 @@ function App() {
             <CheckSquare size={18} />
             <span>Tareas Kanban</span>
           </button>
+
+          <button 
+            className={`menu-item ${currentTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setCurrentTab('settings')}
+          >
+            <SettingsIcon size={18} />
+            <span>Configuración</span>
+          </button>
         </nav>
 
         <div className="sidebar-footer">
@@ -223,6 +247,12 @@ function App() {
           {currentTab === 'orders' && <PurchaseOrders />}
           {currentTab === 'documents' && <Documents />}
           {currentTab === 'tasks' && <Tasks />}
+          {currentTab === 'settings' && (
+            <Settings 
+              profile={profile} 
+              onProfileUpdate={() => fetchUserProfile(session.user.id)} 
+            />
+          )}
         </div>
       </main>
 
