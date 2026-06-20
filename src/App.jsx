@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase, isConfigured } from './supabaseClient';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import Products from './components/Products';
@@ -17,6 +17,36 @@ import {
 } from 'lucide-react';
 
 function App() {
+  if (!isConfigured) {
+    return (
+      <div className="auth-wrapper" style={{ padding: '20px' }}>
+        <div className="auth-card" style={{ maxWidth: '520px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+            <h1 className="auth-title" style={{ color: 'var(--danger-color)' }}>Falta Configuración</h1>
+            <p className="auth-subtitle" style={{ marginTop: '12px', fontSize: '0.9rem', lineHeight: '1.6' }}>
+              Las credenciales de conexión con Supabase no están configuradas en el entorno del servidor de Vercel.
+            </p>
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            <p>Para solucionar este problema y ver tu aplicación en Vercel, sigue estos pasos:</p>
+            <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <li>Entra a tu panel del proyecto en <strong>Vercel</strong>.</li>
+              <li>Ve a la pestaña de <strong>Settings</strong> y luego a <strong>Environment Variables</strong>.</li>
+              <li>Añade las siguientes dos variables:
+                <ul style={{ paddingLeft: '20px', marginTop: '6px', listStyleType: 'disc', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <li>Nombre: <code>VITE_SUPABASE_URL</code> <br/> Valor: <code>https://oxstzslugnzoknzlqiyh.supabase.co</code></li>
+                  <li>Nombre: <code>VITE_SUPABASE_ANON_KEY</code> <br/> Valor: (Copia la clave larga de tu archivo <code>.env</code> local)</li>
+                </ul>
+              </li>
+              <li>Haz clic en <strong>Save</strong> para guardar las variables.</li>
+              <li>Ve a la pestaña de <strong>Deployments</strong> en Vercel, selecciona tu último despliegue, pulsa en los tres puntos y selecciona <strong>Redeploy</strong> (con la opción "rebuild" activa) para aplicar la configuración.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [currentTab, setCurrentTab] = useState('dashboard');
