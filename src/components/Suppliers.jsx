@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Edit2, Trash2, Search, X, Check, Globe, Mail, Phone, MapPin, ExternalLink, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Check, Globe, Mail, Phone, MapPin, ExternalLink, RefreshCw, Building, User, Link as LinkIcon } from 'lucide-react';
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
@@ -19,10 +19,6 @@ export default function Suppliers() {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
-
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
@@ -38,6 +34,10 @@ export default function Suppliers() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
 
   const openAddModal = () => {
     setEditingSupplier(null);
@@ -167,71 +167,138 @@ export default function Suppliers() {
           <p style={{ marginTop: '8px' }}>Registra un proveedor para asociarlo a tus pedidos de compra.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {filteredSuppliers.map(s => (
-            <div key={s.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>{s.company_name}</h3>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(s)}>
-                      <Edit2 size={12} />
-                    </button>
-                    <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => handleDelete(s.id)}>
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
+            <div 
+              key={s.id} 
+              className="card" 
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                padding: '20px 24px', 
+                gap: '20px',
+                borderRadius: '16px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-primary)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+              }}
+            >
+              {/* Left section: Building Icon and Text content */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, minWidth: 0 }}>
+                {/* Building Icon Container */}
+                <div 
+                  style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    borderRadius: '12px', 
+                    backgroundColor: 'rgba(59, 130, 246, 0.08)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    color: 'var(--accent-color)',
+                    border: '1px solid rgba(59, 130, 246, 0.15)',
+                    flexShrink: 0
+                  }}
+                >
+                  <Building size={20} />
                 </div>
-                {s.contact_name && (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 500 }}>
-                    Contacto: {s.contact_name}
-                  </p>
-                )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
-                  {s.email && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
-                      <Mail size={14} style={{ color: 'var(--text-tertiary)' }} />
-                      <a href={`mailto:${s.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>{s.email}</a>
-                    </div>
-                  )}
-                  {s.phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
-                      <Phone size={14} style={{ color: 'var(--text-tertiary)' }} />
-                      <span>{s.phone}</span>
-                    </div>
-                  )}
-                  {s.country && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--text-secondary)' }}>
-                      <MapPin size={14} style={{ color: 'var(--text-tertiary)' }} />
-                      <span>{s.country}</span>
-                    </div>
-                  )}
-                  {s.website && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', color: 'var(--accent-color)' }}>
-                      <Globe size={14} />
-                      <a href={s.website.startsWith('http') ? s.website : `https://${s.website}`} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {s.website} <ExternalLink size={10} />
-                      </a>
+                {/* Text information */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
+                  {/* Company Name */}
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {s.company_name}
+                  </h3>
+
+                  {/* Sub-metadata row */}
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    {s.contact_name && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <User size={14} style={{ color: 'var(--text-tertiary)' }} />
+                        <span>{s.contact_name}</span>
+                      </div>
+                    )}
+                    {s.country && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <MapPin size={14} style={{ color: 'var(--text-tertiary)' }} />
+                        <span>{s.country}</span>
+                      </div>
+                    )}
+                    {s.website && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <LinkIcon size={14} style={{ color: 'var(--text-tertiary)' }} />
+                        <a 
+                          href={s.website.startsWith('http') ? s.website : `https://${s.website}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          style={{ color: 'var(--accent-color)', textDecoration: 'none', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '240px' }}
+                        >
+                          {s.website.replace(/(^\w+:|^)\/\//, '')}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Note / Tag */}
+                  {s.notes && (
+                    <div style={{ display: 'flex', marginTop: '4px' }}>
+                      <span 
+                        style={{ 
+                          fontSize: '0.75rem', 
+                          backgroundColor: 'rgba(59, 130, 246, 0.12)', 
+                          color: 'var(--accent-color)', 
+                          padding: '4px 12px', 
+                          borderRadius: '9999px',
+                          fontWeight: '600'
+                        }}
+                      >
+                        {s.notes.length > 60 ? s.notes.slice(0, 60) + '...' : s.notes}
+                      </span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {s.notes && (
-                <div style={{ 
-                  padding: '10px 12px', 
-                  backgroundColor: 'var(--bg-tertiary)', 
-                  border: '1px solid var(--border-color)', 
-                  borderRadius: 'var(--border-radius-sm)', 
-                  fontSize: '0.8rem',
-                  color: 'var(--text-secondary)',
-                  maxHeight: '100px',
-                  overflowY: 'auto'
-                }}>
-                  <strong>Notas:</strong> {s.notes}
-                </div>
-              )}
+              {/* Right section: Action Buttons */}
+              <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  style={{ 
+                    padding: '8px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'var(--bg-secondary)', 
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '36px',
+                    height: '36px'
+                  }} 
+                  onClick={() => openEditModal(s)}
+                  title="Editar proveedor"
+                >
+                  <Edit2 size={14} style={{ color: 'var(--text-secondary)' }} />
+                </button>
+                <button 
+                  className="btn btn-danger btn-sm" 
+                  style={{ 
+                    padding: '8px', 
+                    borderRadius: '8px', 
+                    backgroundColor: 'rgba(239, 68, 68, 0.06)', 
+                    border: '1px solid rgba(239, 68, 68, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '36px',
+                    height: '36px'
+                  }} 
+                  onClick={() => handleDelete(s.id)}
+                  title="Eliminar proveedor"
+                >
+                  <Trash2 size={14} style={{ color: 'var(--danger-color)' }} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

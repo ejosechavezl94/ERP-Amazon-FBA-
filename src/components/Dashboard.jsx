@@ -4,6 +4,12 @@ import {
   TrendingUp, AlertTriangle, Package, ShoppingCart, 
   CheckSquare, Receipt, RefreshCw, Calendar, Clock 
 } from 'lucide-react';
+import { MonthPicker } from './ui/Calendar';
+
+const mesActual = () => {
+  const h = new Date();
+  return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, "0")}`;
+};
 
 export default function Dashboard({ onNavigate }) {
   const [loading, setLoading] = useState(true);
@@ -13,14 +19,17 @@ export default function Dashboard({ onNavigate }) {
     activeOrdersCount: 0,
     pendingTasksCount: 0,
     recentExpenses: 0,
+    totalSalesMonth: 0,
+    totalSalesMonthUnits: 0,
   });
   const [alerts, setAlerts] = useState([]);
   const [recentPO, setRecentPO] = useState([]);
   const [urgentTasks, setUrgentTasks] = useState([]);
+  const [mes, setMes] = useState(mesActual);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [mes]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -96,12 +105,37 @@ export default function Dashboard({ onNavigate }) {
         }
       });
 
+      // 5. Fetch Sales for current month
+      const [year, month] = mes.split("-").map(Number);
+      const nextYear = month === 12 ? year + 1 : year;
+      const nextMonthVal = month === 12 ? 1 : month + 1;
+      const nextMonthStr = `${nextYear}-${String(nextMonthVal).padStart(2, "0")}`;
+
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*, products(target_price)')
+        .gte('sale_date', `${mes}-01`)
+        .lt('sale_date', `${nextMonthStr}-01`);
+
+      if (salesError) throw salesError;
+
+      let salesTotal = 0;
+      let salesUnits = 0;
+      if (salesData) {
+        salesData.forEach(sale => {
+          salesUnits += sale.quantity;
+          salesTotal += sale.quantity * (sale.products?.target_price || 0);
+        });
+      }
+
       setMetrics({
         totalInventoryValue: totalVal,
         lowStockCount: lowStock.length,
         activeOrdersCount: activePOs.length,
         pendingTasksCount: pendingTasks.length,
         recentExpenses: totalActivePOCost,
+        totalSalesMonth: salesTotal,
+        totalSalesMonthUnits: salesUnits,
       });
 
       setAlerts(generatedAlerts);
@@ -134,9 +168,12 @@ export default function Dashboard({ onNavigate }) {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">Vista general de tu empresa de comercio electrónico y FBA</p>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={fetchDashboardData}>
-          <RefreshCw size={14} /> Actualizar
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <MonthPicker value={mes} onChange={setMes} />
+          <button className="btn btn-secondary btn-sm" onClick={fetchDashboardData}>
+            <RefreshCw size={14} /> Actualizar
+          </button>
+        </div>
       </div>
 
       {/* Metrics Row */}
@@ -184,23 +221,45 @@ export default function Dashboard({ onNavigate }) {
             En tablero Kanban
           </span>
         </div>
+
+        <div className="card metric-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="metric-label">Ventas del Mes</span>
+            <TrendingUp size={20} style={{ color: '#10b981' }} />
+          </div>
+          <span className="metric-value" style={{ color: '#10b981' }}>{formatCurrency(metrics.totalSalesMonth)}</span>
+          <span className="metric-trend trend-up">
+            {metrics.totalSalesMonthUnits} uds. vendidas
+          </span>
+        </div>
       </div>
 
-      {/* Alerts Section */}
+      {/* Slim Alerts Bar */}
       {alerts.length > 0 && (
-        <div className="card" style={{ marginBottom: '24px', borderLeft: '4px solid var(--danger-color)' }}>
-          <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-color)' }}>
-            <AlertTriangle size={18} /> Alertas Críticas ({alerts.length})
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', marginTop: '12px' }}>
-            {alerts.map(alert => (
-              <div key={alert.id} className={`alert-banner alert-banner-${alert.type}`} style={{ margin: 0 }}>
-                <strong>[{alert.category}]</strong> {alert.message}
-              </div>
-            ))}
+        <div className="slim-alerts-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={16} className="danger-glow-icon" style={{ color: 'var(--danger-color)', flexShrink: 0 }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
+              {alerts[0].message}
+              {alerts.length > 1 && (
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 'normal', marginLeft: '6px' }}>
+                  (+{alerts.length - 1} alertas adicionales)
+                </span>
+              )}
+            </span>
           </div>
+          {alerts.length > 1 && (
+            <button 
+              className="btn btn-secondary btn-sm" 
+              onClick={() => onNavigate('tasks')}
+              style={{ padding: '4px 8px', fontSize: '0.75rem', height: 'auto' }}
+            >
+              Ver todas
+            </button>
+          )}
         </div>
       )}
+
 
       {/* Main Grid */}
       <div className="grid-cols-2">

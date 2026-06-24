@@ -4,12 +4,17 @@ import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import Products from './components/Products';
 import Inventory from './components/Inventory';
+import Batches from './components/Batches';
 import Suppliers from './components/Suppliers';
 import PurchaseOrders from './components/PurchaseOrders';
 import Documents from './components/Documents';
 import Tasks from './components/Tasks';
 import Settings from './components/Settings';
+import GastosPage from './components/GastosPage';
 import GlobalSearch from './components/GlobalSearch';
+import SalesPage from './components/SalesPage';
+import SessionNavBar from './components/SessionNavBar';
+import InternalChat from './components/InternalChat';
 
 import { 
   LayoutDashboard, Package, TrendingUp, Users, ShoppingCart, 
@@ -52,39 +57,59 @@ function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
   // 1. Session and Auth State management with 2FA check
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    console.log("App mounted. Checking session...");
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("App getSession resolved. Session:", session ? "Exists" : "Null");
       if (session) {
-        // Enforce 2FA session verification check on reload
-        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-          // User is enrolled in MFA but the session is only AAL1. Force re-auth.
-          setSession(null);
-        } else {
-          setSession(session);
-          fetchUserProfile(session.user.id);
-        }
+        setSession(session);
+        fetchUserProfile(session.user.id);
+        
+        // MFA check in background
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
+          if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+            console.log("App getSession: MFA required but only AAL1. Forcing re-auth...");
+            setSession(null);
+            setProfile(null);
+          }
+        }).catch(err => {
+          console.error("Error checking MFA in background on session load:", err);
+        });
       }
+    }).catch(err => {
+      console.error("Error getting session on load:", err);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("onAuthStateChange fired! Event:", event, "Session user:", session?.user?.email || "Null");
       if (session) {
-        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-          setSession(null);
-        } else {
-          setSession(session);
-          fetchUserProfile(session.user.id);
-        }
+        setSession(session);
+        fetchUserProfile(session.user.id);
+
+        // MFA check in background
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
+          if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+            console.log("onAuthStateChange: MFA required but only AAL1. Setting session to null in UI...");
+            setSession(null);
+            setProfile(null);
+          }
+        }).catch(err => {
+          console.error("Error checking MFA in background on auth state change:", err);
+        });
       } else {
+        console.log("onAuthStateChange: No session, clearing state in UI...");
         setSession(null);
         setProfile(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("App unmounting. Unsubscribing from auth state changes...");
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId) => {
@@ -122,7 +147,73 @@ function App() {
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
   }, []);
+  // 4. Ask for Web Notification permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
 
+  // 5. Listen to new chat messages for notifications & badge increment
+  useEffect(() => {
+    if (!session) return;
+
+    let profilesMap = {};
+    supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .then(({ data }) => {
+        if (data) {
+          data.forEach(p => {
+            profilesMap[p.id] = p;
+          });
+        }
+      });
+
+    const channel = supabase
+      .channel('realtime-chat-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'internal_messages'
+        },
+        (payload) => {
+          const newMsg = payload.new;
+          if (newMsg.user_id !== session.user.id) {
+            setCurrentTab(prevTab => {
+              if (prevTab !== 'chat') {
+                setUnreadChatCount(prevCount => prevCount + 1);
+                
+                if ('Notification' in window && Notification.permission === 'granted') {
+                  const sender = profilesMap[newMsg.user_id];
+                  const senderName = sender?.full_name || sender?.email || 'Socio';
+                  
+                  new Notification('Nuevo mensaje en el Chat Interno', {
+                    body: `${senderName}: ${newMsg.message}`,
+                    icon: '/amazon-logo.png'
+                  });
+                }
+              }
+              return prevTab;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [session]);
+
+  // 6. Reset unread count when switching to chat tab
+  useEffect(() => {
+    if (currentTab === 'chat') {
+      setUnreadChatCount(0);
+    }
+  }, [currentTab]);
   const handleSignOut = async () => {
     if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
       await supabase.auth.signOut();
@@ -147,107 +238,16 @@ function App() {
   return (
     <div className="app-container">
       {/* Sidebar navigation */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <div style={{ padding: '6px', borderRadius: '6px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', display: 'flex', alignItems: 'center' }}>
-            <TrendingUp size={20} />
-          </div>
-          <span className="logo-text">EPR Manager</span>
-        </div>
-
-        <nav className="sidebar-menu">
-          <button 
-            className={`menu-item ${currentTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('dashboard')}
-          >
-            <LayoutDashboard size={18} />
-            <span>Dashboard</span>
-          </button>
-          
-          <button 
-            className={`menu-item ${currentTab === 'products' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('products')}
-          >
-            <Package size={18} />
-            <span>Productos</span>
-          </button>
-
-          <button 
-            className={`menu-item ${currentTab === 'inventory' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('inventory')}
-          >
-            <TrendingUp size={18} />
-            <span>Inventario</span>
-          </button>
-
-          <button 
-            className={`menu-item ${currentTab === 'suppliers' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('suppliers')}
-          >
-            <Users size={18} />
-            <span>Proveedores</span>
-          </button>
-
-          <button 
-            className={`menu-item ${currentTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('orders')}
-          >
-            <ShoppingCart size={18} />
-            <span>Pedidos PO</span>
-          </button>
-
-          <button 
-            className={`menu-item ${currentTab === 'documents' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('documents')}
-          >
-            <FileText size={18} />
-            <span>Documentos</span>
-          </button>
-
-          <button 
-            className={`menu-item ${currentTab === 'tasks' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('tasks')}
-          >
-            <CheckSquare size={18} />
-            <span>Tareas Kanban</span>
-          </button>
-
-          <button 
-            className={`menu-item ${currentTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setCurrentTab('settings')}
-          >
-            <SettingsIcon size={18} />
-            <span>Configuración</span>
-          </button>
-        </nav>
-
-        <div className="sidebar-footer">
-          {/* User Info Card */}
-          <div className="user-profile">
-            <div className="user-avatar">
-              {getUserInitials()}
-            </div>
-            <div className="user-info">
-              <div className="user-name">{profile?.full_name || 'Mi Perfil'}</div>
-              <div className="user-email">{session.user.email}</div>
-            </div>
-          </div>
-
-          {/* Theme & Logout Buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={toggleTheme}>
-              {theme === 'light' ? (
-                <><Moon size={14} /> <span>Oscuro</span></>
-              ) : (
-                <><Sun size={14} /> <span>Claro</span></>
-              )}
-            </button>
-            <button className="btn btn-danger btn-sm btn-icon-only" onClick={handleSignOut} title="Cerrar sesión">
-              <LogOut size={14} />
-            </button>
-          </div>
-        </div>
-      </aside>
+      <SessionNavBar 
+        currentTab={currentTab} 
+        setCurrentTab={setCurrentTab} 
+        session={session} 
+        profile={profile} 
+        handleSignOut={handleSignOut} 
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+        unreadChatCount={unreadChatCount}
+      />
 
       {/* Main viewport */}
       <main className="main-content">
@@ -273,10 +273,14 @@ function App() {
           {currentTab === 'dashboard' && <Dashboard onNavigate={(tab) => setCurrentTab(tab)} />}
           {currentTab === 'products' && <Products />}
           {currentTab === 'inventory' && <Inventory />}
+          {currentTab === 'batches' && <Batches />}
           {currentTab === 'suppliers' && <Suppliers />}
           {currentTab === 'orders' && <PurchaseOrders />}
           {currentTab === 'documents' && <Documents />}
           {currentTab === 'tasks' && <Tasks />}
+          {currentTab === 'sales' && <SalesPage />}
+          {currentTab === 'gastos' && <GastosPage />}
+          {currentTab === 'chat' && <InternalChat session={session} profile={profile} />}
           {currentTab === 'settings' && (
             <Settings 
               profile={profile} 

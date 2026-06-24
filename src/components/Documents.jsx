@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Trash2, Search, X, Check, FileText, Download, Link, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Search, X, Check, FileText, Download, Link, RefreshCw, Eye } from 'lucide-react';
 
 export default function Documents() {
   const [documents, setDocuments] = useState([]);
@@ -13,6 +13,11 @@ export default function Documents() {
   const [filterCategory, setFilterCategory] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Preview states
+  const [previewDoc, setPreviewDoc] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Form states
   const [file, setFile] = useState(null);
@@ -100,7 +105,7 @@ export default function Documents() {
       if (uploadError) throw uploadError;
 
       // 2. Insert metadata into public.documents table
-      const { error: dbError } = await supabase
+      const { data: insertedData, error: dbError } = await supabase
         .from('documents')
         .insert([{
           name: file.name,
@@ -114,7 +119,8 @@ export default function Documents() {
           purchase_order_id: orderId || null,
           batch_id: batchId || null,
           uploaded_by: (await supabase.auth.getSession()).data.session?.user?.id
-        }]);
+        }])
+        .select();
 
       if (dbError) throw dbError;
 
@@ -126,10 +132,36 @@ export default function Documents() {
       setOrderId('');
       setBatchId('');
       fetchDocuments();
+
+      if (insertedData && insertedData[0]) {
+        handlePreview(insertedData[0]);
+      }
     } catch (err) {
       setError(err.message || 'Error durante la subida del documento');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handlePreview = async (doc) => {
+    setPreviewDoc(doc);
+    setLoadingPreview(true);
+    setPreviewUrl('');
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(doc.file_path, 300, { download: false }); // link valid for 5 minutes and served inline
+
+      if (error) throw error;
+      if (data?.signedUrl) {
+        setPreviewUrl(data.signedUrl);
+      }
+    } catch (err) {
+      console.error('Error generating preview URL:', err);
+      alert(`Error al cargar la vista previa: ${err.message}`);
+      setPreviewDoc(null);
+    } finally {
+      setLoadingPreview(false);
     }
   };
 
@@ -191,6 +223,8 @@ export default function Documents() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+
   return (
     <div>
       <div className="page-header">
@@ -203,49 +237,128 @@ export default function Documents() {
         </button>
       </div>
 
-      {/* Search and Filters */}
+      {/* Category Tabs (Notion style) */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        overflowX: 'auto', 
+        paddingBottom: '8px', 
+        marginBottom: '20px', 
+        borderBottom: '1px solid var(--border-color)' 
+      }}>
+        <button 
+          onClick={() => setFilterCategory('All')}
+          style={{
+            padding: '6px 12px',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            border: 'none',
+            background: 'none',
+            cursor: 'pointer',
+            borderRadius: '4px',
+            color: filterCategory === 'All' ? 'var(--accent-color)' : 'var(--text-secondary)',
+            backgroundColor: filterCategory === 'All' ? 'var(--accent-light)' : 'transparent',
+            transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Todos
+        </button>
+        {categories.map(cat => (
+          <button 
+            key={cat}
+            onClick={() => setFilterCategory(cat)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              border: 'none',
+              background: 'none',
+              cursor: 'pointer',
+              borderRadius: '4px',
+              color: filterCategory === cat ? 'var(--accent-color)' : 'var(--text-secondary)',
+              backgroundColor: filterCategory === cat ? 'var(--accent-light)' : 'transparent',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Search & Layout Toggle */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: '300px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ position: 'relative', flex: 1, maxWidth: '360px' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-tertiary)' }} />
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Buscar documentos..." 
+              placeholder="Buscar documentos por nombre, producto..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: '36px' }}
             />
           </div>
-          <select 
-            className="form-select" 
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            style={{ width: '180px' }}
-          >
-            <option value="All">Todas las Categorías</option>
-            {categories.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          
+          {/* View Toggles */}
+          <div style={{ display: 'flex', gap: '4px', border: '1px solid var(--border-color)', padding: '2px', borderRadius: 'var(--border-radius-sm)', backgroundColor: 'var(--bg-secondary)' }}>
+            <button 
+              type="button"
+              onClick={() => setViewMode('list')}
+              style={{
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                border: 'none',
+                background: viewMode === 'list' ? 'var(--bg-primary)' : 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: viewMode === 'list' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontWeight: 500,
+                boxShadow: viewMode === 'list' ? 'var(--shadow-sm)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Lista
+            </button>
+            <button 
+              type="button"
+              onClick={() => setViewMode('grid')}
+              style={{
+                padding: '4px 10px',
+                fontSize: '0.75rem',
+                border: 'none',
+                background: viewMode === 'grid' ? 'var(--bg-primary)' : 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                color: viewMode === 'grid' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontWeight: 500,
+                boxShadow: viewMode === 'grid' ? 'var(--shadow-sm)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Cuadrícula
+            </button>
+          </div>
         </div>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
           Mostrando {filteredDocs.length} documentos
         </div>
       </div>
 
-      {/* Documents Table */}
+      {/* Main viewport */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
           <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
         </div>
       ) : filteredDocs.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <FileText size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+          <FileText size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
           <h3>No hay documentos guardados</h3>
-          <p style={{ marginTop: '8px' }}>Sube facturas, contratos o fotos de aduanas vinculadas a tus pedidos.</p>
+          <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Sube facturas, contratos o packing lists vinculados a tus lotes.</p>
         </div>
-      ) : (
+      ) : viewMode === 'list' ? (
         <div className="table-container">
           <table className="table">
             <thead>
@@ -265,7 +378,7 @@ export default function Documents() {
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <FileText size={18} style={{ color: 'var(--accent-color)', flexShrink: 0 }} />
-                      <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                      <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
                         {doc.name}
                       </span>
                     </div>
@@ -309,11 +422,14 @@ export default function Documents() {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '8px' }}>
-                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handleDownload(doc)} title="Descargar de manera segura">
-                        <Download size={14} />
+                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handlePreview(doc)} title="Vista previa">
+                        <Eye size={13} />
                       </button>
-                      <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => handleDelete(doc)}>
-                        <Trash2 size={14} />
+                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handleDownload(doc)} title="Descargar">
+                        <Download size={13} />
+                      </button>
+                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handleDelete(doc)} title="Eliminar">
+                        <Trash2 size={13} style={{ color: 'var(--danger-color)' }} />
                       </button>
                     </div>
                   </td>
@@ -321,6 +437,71 @@ export default function Documents() {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : (
+        /* Grid View Mode */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+          {filteredDocs.map(doc => (
+            <div key={doc.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'space-between', position: 'relative', padding: '16px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>{doc.category}</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{formatBytes(doc.file_size)}</span>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', margin: '8px 0' }}>
+                  <FileText size={24} style={{ color: 'var(--accent-color)', flexShrink: 0, marginTop: '2px' }} />
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)', display: 'block', wordBreak: 'break-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '2.4em', lineHeight: '1.2' }}>
+                    {doc.name}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.75rem', padding: '8px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', margin: '8px 0' }}>
+                  {doc.products && (
+                    <span style={{ color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Link size={10} /> SKU: {doc.products.sku_internal}
+                    </span>
+                  )}
+                  {doc.suppliers && (
+                    <span style={{ color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Link size={10} /> Proveedor: {doc.suppliers.company_name}
+                    </span>
+                  )}
+                  {doc.batches && (
+                    <span style={{ color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Link size={10} /> Lote: {doc.batches.batch_number}
+                    </span>
+                  )}
+                  {!doc.product_id && !doc.supplier_id && !doc.purchase_order_id && !doc.batch_id && (
+                    <span style={{ color: 'var(--text-tertiary)' }}>General</span>
+                  )}
+                </div>
+
+                {doc.notes && (
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontStyle: 'italic', margin: '4px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {doc.notes}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                  {new Date(doc.uploaded_at).toLocaleDateString('es-ES')}
+                </span>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button className="btn btn-secondary btn-sm btn-icon-only" style={{ padding: '4px' }} onClick={() => handlePreview(doc)} title="Vista previa">
+                    <Eye size={12} />
+                  </button>
+                  <button className="btn btn-secondary btn-sm btn-icon-only" style={{ padding: '4px' }} onClick={() => handleDownload(doc)} title="Descargar">
+                    <Download size={12} />
+                  </button>
+                  <button className="btn btn-secondary btn-sm btn-icon-only" style={{ padding: '4px' }} onClick={() => handleDelete(doc)} title="Eliminar">
+                    <Trash2 size={12} style={{ color: 'var(--danger-color)' }} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -436,6 +617,85 @@ export default function Documents() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Document Modal */}
+      {previewDoc && (
+        <div className="modal-overlay" style={{ zIndex: 105 }}>
+          <div className="modal-content" style={{ maxWidth: '800px', width: '95%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
+              <div>
+                <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Eye size={18} style={{ color: 'var(--accent-color)' }} />
+                  {previewDoc.name}
+                </h3>
+                <span className="badge badge-neutral" style={{ marginTop: '4px', display: 'inline-block' }}>{previewDoc.category}</span>
+              </div>
+              <button className="action-btn" onClick={() => { setPreviewDoc(null); setPreviewUrl(''); }}><X size={18} /></button>
+            </div>
+            
+            <div className="modal-body" style={{ flex: 1, minHeight: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px', overflowY: 'auto' }}>
+              {loadingPreview ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <RefreshCw className="animate-spin" size={32} style={{ color: 'var(--accent-color)' }} />
+                  <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Cargando vista previa...</span>
+                </div>
+              ) : previewUrl ? (
+                <div style={{ width: '100%', height: '100%', minHeight: '350px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {/* Image Preview */}
+                  {(previewDoc.name.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp|svg)$/) || previewDoc.file_type?.startsWith('image/')) ? (
+                    <div style={{ padding: '10px', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', maxWidth: '100%', maxHeight: '550px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <img 
+                        src={previewUrl} 
+                        alt={previewDoc.name} 
+                        style={{ maxWidth: '100%', maxHeight: '500px', objectFit: 'contain', borderRadius: '4px' }} 
+                      />
+                    </div>
+                  ) : /* PDF Preview */
+                  (previewDoc.name.toLowerCase().endsWith('.pdf') || previewDoc.file_type === 'application/pdf') ? (
+                    <iframe 
+                      src={previewUrl} 
+                      title={previewDoc.name} 
+                      width="100%" 
+                      height="500px" 
+                      style={{ border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'white' }} 
+                    />
+                  ) : /* Text Preview */
+                  (previewDoc.name.toLowerCase().match(/\.(txt|json|md|log|csv)$/) || previewDoc.file_type?.startsWith('text/')) ? (
+                    <iframe 
+                      src={previewUrl} 
+                      title={previewDoc.name} 
+                      width="100%" 
+                      height="400px" 
+                      style={{ border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', padding: '10px' }} 
+                    />
+                  ) : (
+                    /* Fallback when preview not supported */
+                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+                      <FileText size={64} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--accent-color)' }} />
+                      <h4 style={{ color: 'var(--text-primary)' }}>Vista previa no disponible</h4>
+                      <p style={{ marginTop: '8px', fontSize: '0.85rem' }}>No podemos previsualizar este tipo de archivo ({previewDoc.name.split('.').pop().toUpperCase()}) directamente en el navegador.</p>
+                      <button className="btn btn-primary" style={{ marginTop: '20px' }} onClick={() => handleDownload(previewDoc)}>
+                        <Download size={14} /> Descargar Archivo
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ color: 'var(--danger-color)' }}>Error al cargar el archivo.</div>
+              )}
+            </div>
+            
+            <div className="modal-footer" style={{ flexShrink: 0 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => { setPreviewDoc(null); setPreviewUrl(''); }}>Cerrar</button>
+              {previewUrl && (
+                <button type="button" className="btn btn-primary" onClick={() => handleDownload(previewDoc)}>
+                  <Download size={14} /> Descargar
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

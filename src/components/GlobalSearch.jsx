@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, X, Package, Globe, ShoppingCart, CheckSquare } from 'lucide-react';
+import { Search, X, Package, Globe, ShoppingCart, CheckSquare, RefreshCw } from 'lucide-react';
 
 export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
   const [query, setQuery] = useState('');
@@ -52,37 +52,45 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
       const pSearch = supabase
         .from('products')
         .select('id, name, sku_internal, brand')
-        .or(`name.ilike.${searchTerm},sku_internal.ilike.${searchTerm},brand.ilike.${searchTerm}`)
-        .limit(5);
+        .or(`name.ilike."${searchTerm}",sku_internal.ilike."${searchTerm}",brand.ilike."${searchTerm}"`)
+        .limit(5)
+        .then(r => r.data || [])
+        .catch(err => { console.error('Error searching products:', err); return []; });
 
       // 2. Search suppliers
       const sSearch = supabase
         .from('suppliers')
         .select('id, company_name, contact_name, country')
-        .or(`company_name.ilike.${searchTerm},contact_name.ilike.${searchTerm},country.ilike.${searchTerm}`)
-        .limit(5);
+        .or(`company_name.ilike."${searchTerm}",contact_name.ilike."${searchTerm}",country.ilike."${searchTerm}"`)
+        .limit(5)
+        .then(r => r.data || [])
+        .catch(err => { console.error('Error searching suppliers:', err); return []; });
 
-      // 3. Search purchase orders
+      // 3. Search purchase orders (standard ilike on order_number)
       const oSearch = supabase
         .from('purchase_orders')
         .select('id, order_number, products(name)')
-        .or(`order_number.ilike.${searchTerm}`)
-        .limit(5);
+        .ilike('order_number', searchTerm)
+        .limit(5)
+        .then(r => r.data || [])
+        .catch(err => { console.error('Error searching orders:', err); return []; });
 
       // 4. Search tasks
       const tSearch = supabase
         .from('tasks')
         .select('id, title, status')
-        .or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`)
-        .limit(5);
+        .or(`title.ilike."${searchTerm}",description.ilike."${searchTerm}"`)
+        .limit(5)
+        .then(r => r.data || [])
+        .catch(err => { console.error('Error searching tasks:', err); return []; });
 
-      const [pRes, sRes, oRes, tRes] = await Promise.all([pSearch, sSearch, oSearch, tSearch]);
+      const [products, suppliers, orders, tasks] = await Promise.all([pSearch, sSearch, oSearch, tSearch]);
 
       setResults({
-        products: pRes.data || [],
-        suppliers: sRes.data || [],
-        orders: oRes.data || [],
-        tasks: tRes.data || []
+        products,
+        suppliers,
+        orders,
+        tasks
       });
     } catch (err) {
       console.error('Error during global search:', err);

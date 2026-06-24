@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Edit2, Trash2, X, Check, Clock, User, MessageSquare, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Clock, User, MessageSquare, RefreshCw } from 'lucide-react';
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -25,24 +25,18 @@ export default function Tasks() {
   const [newComment, setNewComment] = useState('');
 
   const columns = [
-    { id: 'Pendiente', title: 'Pendiente', badgeClass: 'badge-neutral' },
-    { id: 'En progreso', title: 'En Progreso', badgeClass: 'badge-neutral' },
-    { id: 'Esperando respuesta', title: 'Esperando Respuesta', badgeClass: 'badge-warning' },
-    { id: 'Bloqueado', title: 'Bloqueado', badgeClass: 'badge-danger' },
-    { id: 'Completado', title: 'Completado', badgeClass: 'badge-success' }
+    { id: 'Pendiente', title: 'Pendiente', badgeClass: 'badge-neutral', color: '#8a99ad' },
+    { id: 'En progreso', title: 'En Progreso', badgeClass: 'badge-neutral', color: '#00c2ff' },
+    { id: 'Esperando respuesta', title: 'Esperando Respuesta', badgeClass: 'badge-warning', color: '#ffb900' },
+    { id: 'Completado', title: 'Completado', badgeClass: 'badge-success', color: '#10b981' }
   ];
-
-  useEffect(() => {
-    fetchTasks();
-    fetchProfiles();
-  }, []);
 
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('tasks')
-        .select('*, profiles:assignee_id(email, full_name)')
+        .select('*, profiles:assignee_id(email, full_name), task_comments(id)')
         .order('position', { ascending: true });
       if (error) throw error;
       setTasks(data);
@@ -62,6 +56,11 @@ export default function Tasks() {
       console.error('Error fetching profiles:', err);
     }
   };
+
+  useEffect(() => {
+    fetchTasks();
+    fetchProfiles();
+  }, []);
 
   const openAddModal = (colId = 'Pendiente') => {
     setEditingTask(null);
@@ -128,6 +127,7 @@ export default function Tasks() {
 
       setNewComment('');
       fetchComments(selectedTask.id);
+      fetchTasks();
     } catch (err) {
       console.error('Error adding comment:', err);
     }
@@ -259,7 +259,7 @@ export default function Tasks() {
               >
                 <div className="kanban-column-header">
                   <div className="column-title">
-                    <span className={`badge ${col.badgeClass}`} style={{ width: '8px', height: '8px', padding: 0, borderRadius: '50%' }}></span>
+                    <span className={`badge ${col.badgeClass}`} style={{ width: '10px', height: '10px', padding: 0, borderRadius: '50%', backgroundColor: col.color }}></span>
                     <span>{col.title}</span>
                   </div>
                   <span className="column-count">{colTasks.length}</span>
@@ -294,18 +294,63 @@ export default function Tasks() {
                       )}
 
                       <div className="kanban-card-footer">
-                        <span className={`badge ${
-                          task.priority === 'Alta' ? 'badge-danger' : 
-                          task.priority === 'Media' ? 'badge-warning' : 'badge-neutral'
-                        }`} style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
-                          {task.priority}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className={`badge ${
+                            task.priority === 'Alta' ? 'badge-danger' : 
+                            task.priority === 'Media' ? 'badge-warning' : 'badge-neutral'
+                          }`} style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
+                            {task.priority}
+                          </span>
+                          {task.status === 'Completado' && (() => {
+                            const updated = new Date(task.updated_at || task.created_at);
+                            const diffDays = Math.floor((new Date() - updated) / (1000 * 60 * 60 * 24));
+                            const daysLeft = Math.max(0, 30 - diffDays);
+                            return (
+                              <span 
+                                style={{ 
+                                  fontSize: '0.65rem', 
+                                  color: daysLeft <= 5 ? 'var(--danger-color)' : 'var(--text-secondary)',
+                                  backgroundColor: daysLeft <= 5 ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-secondary)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  fontWeight: daysLeft <= 5 ? '600' : 'normal'
+                                }}
+                                title="Días restantes antes de la auto-eliminación por inactividad (30 días)"
+                              >
+                                <Clock size={8} />
+                                <span>{daysLeft === 0 ? 'Hoy' : `${daysLeft}d`}</span>
+                              </span>
+                            );
+                          })()}
+                        </div>
 
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           {task.due_date && (
                             <span className="kanban-card-due" title="Fecha de vencimiento">
                               <Clock size={10} />
                               <span style={{ fontSize: '0.65rem' }}>{task.due_date.slice(5)}</span>
+                            </span>
+                          )}
+                          {task.task_comments && task.task_comments.length > 0 && (
+                            <span 
+                              style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '3px', 
+                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                color: '#60a5fa',
+                                padding: '1px 6px', 
+                                borderRadius: '9999px',
+                                fontSize: '0.65rem',
+                                fontWeight: '600'
+                              }} 
+                              title={`${task.task_comments.length} comentarios`}
+                            >
+                              <MessageSquare size={10} style={{ strokeWidth: 2.5 }} />
+                              <span>{task.task_comments.length}</span>
                             </span>
                           )}
                           <div 
@@ -381,7 +426,6 @@ export default function Tasks() {
                       <option value="Pendiente">Pendiente</option>
                       <option value="En progreso">En Progreso</option>
                       <option value="Esperando respuesta">Esperando Respuesta</option>
-                      <option value="Bloqueado">Bloqueado</option>
                       <option value="Completado">Completado</option>
                     </select>
                   </div>

@@ -17,10 +17,6 @@ export default function Settings({ profile, onProfileUpdate }) {
   const [mfaError, setMfaError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    checkMfaStatus();
-  }, []);
-
   const checkMfaStatus = async () => {
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();
@@ -39,6 +35,10 @@ export default function Settings({ profile, onProfileUpdate }) {
       console.error('Error listing MFA factors:', err);
     }
   };
+
+  useEffect(() => {
+    checkMfaStatus();
+  }, []);
 
   const handleProfileSave = async (e) => {
     e.preventDefault();

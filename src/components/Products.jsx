@@ -13,12 +13,12 @@ export default function Products() {
 
   // Form states
   const [skuInternal, setSkuInternal] = useState('');
-  const [skuAmazon, setSkuAmazon] = useState('');
+  const [asinAmazon, setAsinAmazon] = useState('');
+  const [eanCode, setEanCode] = useState('');
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [status, setStatus] = useState('Active');
-  const [costMfg, setCostMfg] = useState(0);
-  const [costShip, setCostShip] = useState(0);
+  const [costAmazon, setCostAmazon] = useState(0);
   const [targetPrice, setTargetPrice] = useState(0);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState(null);
@@ -51,12 +51,12 @@ export default function Products() {
   const openAddModal = () => {
     setEditingProduct(null);
     setSkuInternal('');
-    setSkuAmazon('');
+    setAsinAmazon('');
+    setEanCode('');
     setName('');
     setBrand('');
     setStatus('Active');
-    setCostMfg(0);
-    setCostShip(0);
+    setCostAmazon(0);
     setTargetPrice(0);
     setNotes('');
     setError(null);
@@ -66,12 +66,12 @@ export default function Products() {
   const openEditModal = (product) => {
     setEditingProduct(product);
     setSkuInternal(product.sku_internal);
-    setSkuAmazon(product.sku_amazon || '');
+    setAsinAmazon(product.asin_amazon || '');
+    setEanCode(product.ean_code || '');
     setName(product.name);
     setBrand(product.brand || '');
     setStatus(product.status);
-    setCostMfg(product.cost_manufacturing);
-    setCostShip(product.cost_shipping);
+    setCostAmazon(product.cost_manufacturing);
     setTargetPrice(product.target_price);
     setNotes(product.notes || '');
     setError(null);
@@ -84,12 +84,13 @@ export default function Products() {
 
     const payload = {
       sku_internal: skuInternal,
-      sku_amazon: skuAmazon || null,
+      asin_amazon: asinAmazon || null,
+      ean_code: eanCode || null,
       name,
       brand: brand || null,
       status,
-      cost_manufacturing: parseFloat(costMfg) || 0,
-      cost_shipping: parseFloat(costShip) || 0,
+      cost_manufacturing: parseFloat(costAmazon) || 0,
+      cost_shipping: 0,
       target_price: parseFloat(targetPrice) || 0,
       notes: notes || null,
       updated_at: new Date().toISOString()
@@ -134,7 +135,8 @@ export default function Products() {
     const matchesSearch = 
       p.name.toLowerCase().includes(search.toLowerCase()) || 
       p.sku_internal.toLowerCase().includes(search.toLowerCase()) || 
-      (p.sku_amazon && p.sku_amazon.toLowerCase().includes(search.toLowerCase()));
+      (p.asin_amazon && p.asin_amazon.toLowerCase().includes(search.toLowerCase())) ||
+      (p.ean_code && p.ean_code.toLowerCase().includes(search.toLowerCase()));
     
     const matchesBrand = filterBrand === 'All' || p.brand === filterBrand;
     return matchesSearch && matchesBrand;
@@ -171,7 +173,7 @@ export default function Products() {
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Buscar por SKU o nombre..." 
+              placeholder="Buscar por SKU, ASIN, EAN o nombre..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: '36px' }}
@@ -210,13 +212,12 @@ export default function Products() {
             <thead>
               <tr>
                 <th>SKU Interno</th>
-                <th>SKU Amazon</th>
+                <th>ASIN Amazon</th>
+                <th>Código EAN</th>
                 <th>Nombre</th>
                 <th>Marca</th>
-                <th>Fabricación</th>
-                <th>Envío</th>
-                <th>Coste Total</th>
-                <th>Precio Objetivo</th>
+                <th>Coste Unidad (AMZ)</th>
+                <th>Precio de Venta Amz</th>
                 <th>Estado</th>
                 <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
@@ -225,12 +226,11 @@ export default function Products() {
               {filteredProducts.map(p => (
                 <tr key={p.id}>
                   <td style={{ fontWeight: 600 }}>{p.sku_internal}</td>
-                  <td>{p.sku_amazon || <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>N/A</span>}</td>
+                  <td>{p.asin_amazon || <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>N/A</span>}</td>
+                  <td>{p.ean_code || <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>N/A</span>}</td>
                   <td>{p.name}</td>
                   <td>{p.brand || <span style={{ color: 'var(--text-tertiary)' }}>N/A</span>}</td>
-                  <td>{formatCurrency(p.cost_manufacturing)}</td>
-                  <td>{formatCurrency(p.cost_shipping)}</td>
-                  <td style={{ fontWeight: 600 }}>{formatCurrency(p.cost_total)}</td>
+                  <td style={{ fontWeight: 600 }}>{formatCurrency(p.cost_manufacturing)}</td>
                   <td>{formatCurrency(p.target_price)}</td>
                   <td>
                     <span className={`badge ${
@@ -273,7 +273,7 @@ export default function Products() {
                   </div>
                 )}
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                   <div className="form-group">
                     <label className="form-label">SKU Interno *</label>
                     <input 
@@ -285,12 +285,21 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">SKU Amazon</label>
+                    <label className="form-label">ASIN Amazon</label>
                     <input 
                       type="text" 
                       className="form-input" 
-                      value={skuAmazon} 
-                      onChange={(e) => setSkuAmazon(e.target.value)} 
+                      value={asinAmazon} 
+                      onChange={(e) => setAsinAmazon(e.target.value)} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Código EAN</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      value={eanCode} 
+                      onChange={(e) => setEanCode(e.target.value)} 
                     />
                   </div>
                 </div>
@@ -330,29 +339,19 @@ export default function Products() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">C. Fabricación (€)</label>
+                    <label className="form-label">Coste por Unidad (AMZ) (€)</label>
                     <input 
                       type="number" 
                       step="0.01" 
                       className="form-input" 
-                      value={costMfg} 
-                      onChange={(e) => setCostMfg(e.target.value)} 
+                      value={costAmazon} 
+                      onChange={(e) => setCostAmazon(e.target.value)} 
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">C. Envío (€)</label>
-                    <input 
-                      type="number" 
-                      step="0.01" 
-                      className="form-input" 
-                      value={costShip} 
-                      onChange={(e) => setCostShip(e.target.value)} 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Precio Objetivo (€)</label>
+                    <label className="form-label">Precio de Venta Amz (€)</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -361,12 +360,6 @@ export default function Products() {
                       onChange={(e) => setTargetPrice(e.target.value)} 
                     />
                   </div>
-                </div>
-
-                <div className="form-group" style={{ marginTop: '8px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Coste Total de Adquisición (Calculado): {formatCurrency(parseFloat(costMfg || 0) + parseFloat(costShip || 0))}
-                  </span>
                 </div>
 
                 <div className="form-group">

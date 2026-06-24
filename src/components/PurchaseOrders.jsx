@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Edit2, Trash2, Search, X, Check, ShoppingCart, RefreshCw, Calendar, ArrowRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, X, Check, ShoppingCart, RefreshCw, Calendar, Link } from 'lucide-react';
 
 export default function PurchaseOrders() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -13,15 +13,17 @@ export default function PurchaseOrders() {
 
   // Form states
   const [orderNumber, setOrderNumber] = useState('');
-  const [productId, setProductId] = useState('');
   const [supplierId, setSupplierId] = useState('');
-  const [quantity, setQuantity] = useState(0);
-  const [unitCost, setUnitCost] = useState(0);
   const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0]);
   const [estArrival, setEstArrival] = useState('');
   const [status, setStatus] = useState('Pendiente');
   const [batchNo, setBatchNo] = useState('');
   const [error, setError] = useState(null);
+
+  // Dynamic order lines state (Array of objects)
+  const [orderLines, setOrderLines] = useState([
+    { productId: '', quantity: 100, unitCost: 5.0 }
+  ]);
 
   useEffect(() => {
     fetchPOs();
@@ -58,10 +60,10 @@ export default function PurchaseOrders() {
   const openAddModal = () => {
     setEditingPO(null);
     setOrderNumber(Math.floor(1000 + Math.random() * 9000).toString());
-    setProductId(products[0]?.id || '');
     setSupplierId(suppliers[0]?.id || '');
-    setQuantity(100);
-    setUnitCost(5.0);
+    setOrderLines([
+      { productId: products[0]?.id || '', quantity: '', unitCost: '' }
+    ]);
     setOrderDate(new Date().toISOString().split('T')[0]);
     setEstArrival('');
     setStatus('Pendiente');
@@ -73,28 +75,71 @@ export default function PurchaseOrders() {
   const openEditModal = (po) => {
     setEditingPO(po);
     setOrderNumber(po.order_number);
-    setProductId(po.product_id);
     setSupplierId(po.supplier_id);
-    setQuantity(po.quantity);
-    setUnitCost(po.unit_cost);
     setOrderDate(po.order_date);
     setEstArrival(po.estimated_arrival || '');
     setStatus(po.status);
     setBatchNo('');
     setError(null);
+
+    // If purchase order contains items array, load it; otherwise fall back to single product columns
+    if (po.items && Array.isArray(po.items) && po.items.length > 0) {
+      setOrderLines(po.items.map(item => ({
+        productId: item.productId || item.product_id || '',
+        quantity: item.quantity || '',
+        unitCost: item.unitCost || item.unit_cost || ''
+      })));
+    } else {
+      setOrderLines([
+        { productId: po.product_id || '', quantity: po.quantity || '', unitCost: po.unit_cost || '' }
+      ]);
+    }
+    
     setIsModalOpen(true);
   };
+
+  // Order Lines Handlers
+  const addOrderLine = () => {
+    setOrderLines([
+      ...orderLines,
+      { productId: products[0]?.id || '', quantity: '', unitCost: '' }
+    ]);
+  };
+
+  const removeOrderLine = (index) => {
+    const lines = [...orderLines];
+    lines.splice(index, 1);
+    setOrderLines(lines);
+  };
+
+  const updateOrderLine = (index, field, value) => {
+    const lines = [...orderLines];
+    lines[index][field] = value;
+    setOrderLines(lines);
+  };
+
+  const calculatedTotalCost = orderLines.reduce((acc, line) => acc + ((parseInt(line.quantity) || 0) * (parseFloat(line.unitCost) || 0)), 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
+    // Validate that all lines have a product selected
+    if (orderLines.some(line => !line.productId)) {
+      setError('Por favor selecciona un producto para todas las líneas del pedido.');
+      return;
+    }
+
+    // Prepare payload
     const payload = {
       order_number: orderNumber,
-      product_id: productId,
+      // Store first line's details as single values for backwards compatibility
+      product_id: orderLines[0]?.productId || null,
+      quantity: orderLines.reduce((sum, l) => sum + l.quantity, 0),
+      unit_cost: orderLines[0]?.unitCost || 0,
+      total_cost: calculatedTotalCost,
+      items: orderLines, // save dynamic array of objects to jsonb column
       supplier_id: supplierId,
-      quantity: parseInt(quantity) || 0,
-      unit_cost: parseFloat(unitCost) || 0,
       order_date: orderDate,
       estimated_arrival: estArrival || null,
       status,
@@ -105,7 +150,6 @@ export default function PurchaseOrders() {
       let savedPO = null;
 
       if (editingPO) {
-        // If status is transitioning to 'Recibido' and it wasn't before
         const statusTransitionToReceived = status === 'Recibido' && editingPO.status !== 'Recibido';
 
         const { data, error } = await supabase
@@ -131,7 +175,9 @@ export default function PurchaseOrders() {
 
         // If PO was created directly in 'Enviado' or 'Aduanas', update transit inventory
         if (status === 'Enviado' || status === 'Aduanas') {
-          await updateTransitInventory(productId, quantity);
+          for (const line of orderLines) {
+            await updateTransitInventory(line.productId, line.quantity);
+          }
         } else if (status === 'Recibido') {
           await handlePOReceipt(savedPO);
         }
@@ -146,76 +192,15 @@ export default function PurchaseOrders() {
 
   // Helper to increment stock_in_transit
   const updateTransitInventory = async (pId, qty) => {
-    const { data: inv } = await supabase.from('inventory').select('*').eq('product_id', pId).single();
-    if (inv) {
-      await supabase.from('inventory').update({
-        stock_in_transit: (inv.stock_in_transit || 0) + qty
-      }).eq('id', inv.id);
-    }
+    const { error } = await supabase.rpc('rpc_update_transit_inventory', { p_product_id: pId, p_qty: qty });
+    if (error) throw error;
   };
 
   // Handle PO status change to Recibido
   const handlePOReceipt = async (po) => {
     try {
-      // 1. Fetch current inventory levels
-      const { data: inv, error: invError } = await supabase
-        .from('inventory')
-        .select('*')
-        .eq('product_id', po.product_id)
-        .single();
-      
-      if (invError) throw invError;
-
-      // Calculate new stocks
-      // Subtract PO quantity from transit (capping at 0), and add to stock_current
-      const transitSub = Math.min(inv.stock_in_transit, po.quantity);
-      const newTransit = inv.stock_in_transit - transitSub;
-      const newCurrent = inv.stock_current + po.quantity;
-
-      const { error: updateError } = await supabase
-        .from('inventory')
-        .update({
-          stock_current: newCurrent,
-          stock_in_transit: newTransit,
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', inv.id);
-
-      if (updateError) throw updateError;
-
-      // 2. Create a Batch representing this received purchase order
-      const generatedBatchNo = batchNo || `LOT-${po.order_number}-${new Date().getFullYear()}`;
-      
-      const { error: batchError } = await supabase
-        .from('batches')
-        .insert([{
-          batch_number: generatedBatchNo,
-          product_id: po.product_id,
-          supplier_id: po.supplier_id,
-          purchase_order_id: po.id,
-          quantity: po.quantity,
-          cost_unit: po.unit_cost,
-          status: 'In Warehouse',
-          manufacturing_date: po.order_date,
-          notes: `Lote autogenerado al recibir el Pedido de Compra PO-${po.order_number}`
-        }]);
-
-      if (batchError) throw batchError;
-
-      // 3. Link the PO to the newly created batch
-      const { data: createdBatch } = await supabase
-        .from('batches')
-        .select('id')
-        .eq('batch_number', generatedBatchNo)
-        .single();
-
-      if (createdBatch) {
-        await supabase
-          .from('purchase_orders')
-          .update({ batch_id: createdBatch.id })
-          .eq('id', po.id);
-      }
-
+      const { error } = await supabase.rpc('rpc_handle_po_receipt', { p_po_id: po.id, p_batch_no: batchNo || '' });
+      if (error) throw error;
     } catch (err) {
       console.error('Error handling PO receipt actions:', err);
       alert(`Pedido marcado como Recibido, pero hubo un problema actualizando el inventario: ${err.message}`);
@@ -224,7 +209,6 @@ export default function PurchaseOrders() {
 
   const handleUpdateStatus = async (po, newStatus) => {
     try {
-      // Check if we are transitioning to 'Recibido'
       const isTransitioningToReceived = newStatus === 'Recibido' && po.status !== 'Recibido';
       
       // Update PO status
@@ -239,9 +223,15 @@ export default function PurchaseOrders() {
       if (isTransitioningToReceived) {
         await handlePOReceipt(data[0]);
       } else {
-        // If status changed to Enviado/Aduanas, add to transit
+        // If status changed to Enviado/Aduanas, add lines to transit
         if ((newStatus === 'Enviado' || newStatus === 'Aduanas') && (po.status !== 'Enviado' && po.status !== 'Aduanas')) {
-          await updateTransitInventory(po.product_id, po.quantity);
+          const lines = po.items && Array.isArray(po.items) && po.items.length > 0
+            ? po.items
+            : [{ productId: po.product_id, quantity: po.quantity }];
+          
+          for (const line of lines) {
+            await updateTransitInventory(line.productId || line.product_id, line.quantity);
+          }
         }
       }
 
@@ -267,12 +257,25 @@ export default function PurchaseOrders() {
   };
 
   const filteredPOs = purchaseOrders.filter(po => {
-    return (
+    const matchesSearch = 
       po.order_number.includes(search) ||
-      po.products?.name.toLowerCase().includes(search.toLowerCase()) ||
-      po.products?.sku_internal.toLowerCase().includes(search.toLowerCase()) ||
-      po.suppliers?.company_name.toLowerCase().includes(search.toLowerCase())
-    );
+      (po.suppliers && po.suppliers.company_name.toLowerCase().includes(search.toLowerCase()));
+    
+    // Check if search query matches any products inside order lines
+    const matchesProduct = po.items && Array.isArray(po.items)
+      ? po.items.some(line => {
+          const prod = products.find(p => p.id === line.productId);
+          return prod && (
+            prod.name.toLowerCase().includes(search.toLowerCase()) ||
+            prod.sku_internal.toLowerCase().includes(search.toLowerCase())
+          );
+        })
+      : (po.products && (
+          po.products.name.toLowerCase().includes(search.toLowerCase()) ||
+          po.products.sku_internal.toLowerCase().includes(search.toLowerCase())
+        ));
+
+    return matchesSearch || matchesProduct;
   });
 
   const formatCurrency = (val) => {
@@ -293,12 +296,12 @@ export default function PurchaseOrders() {
 
       {/* Search and Filters */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ position: 'relative', width: '300px' }}>
+        <div style={{ position: 'relative', width: '320px' }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-tertiary)' }} />
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Buscar por PO, SKU, producto o proveedor..." 
+            placeholder="Buscar por PO, SKU, producto..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ paddingLeft: '36px' }}
@@ -316,9 +319,9 @@ export default function PurchaseOrders() {
         </div>
       ) : filteredPOs.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <ShoppingCart size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
+          <ShoppingCart size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
           <h3>No se encontraron pedidos de compra</h3>
-          <p style={{ marginTop: '8px' }}>Crea un nuevo pedido de compra para empezar a rastrear importaciones.</p>
+          <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Crea un nuevo pedido de compra para empezar a registrar mercancía.</p>
         </div>
       ) : (
         <div className="table-container">
@@ -326,11 +329,10 @@ export default function PurchaseOrders() {
             <thead>
               <tr>
                 <th>Nº Pedido</th>
-                <th>Producto / SKU</th>
+                <th>Variantes / SKU</th>
                 <th>Proveedor</th>
-                <th>Cantidad</th>
-                <th>Coste Unitario</th>
-                <th>Coste Total</th>
+                <th>Unidades Totales</th>
+                <th>Costo Total</th>
                 <th>Fecha Pedido</th>
                 <th>Llegada Estimada</th>
                 <th>Estado</th>
@@ -338,58 +340,75 @@ export default function PurchaseOrders() {
               </tr>
             </thead>
             <tbody>
-              {filteredPOs.map(po => (
-                <tr key={po.id}>
-                  <td style={{ fontWeight: 600 }}>PO-{po.order_number}</td>
-                  <td>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span>{po.products?.name}</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>SKU: {po.products?.sku_internal}</span>
-                    </div>
-                  </td>
-                  <td>{po.suppliers?.company_name}</td>
-                  <td>{po.quantity} uds</td>
-                  <td>{formatCurrency(po.unit_cost)}</td>
-                  <td style={{ fontWeight: 600 }}>{formatCurrency(po.total_cost)}</td>
-                  <td>{po.order_date}</td>
-                  <td>{po.estimated_arrival || <span style={{ color: 'var(--text-tertiary)' }}>Sin definir</span>}</td>
-                  <td>
-                    <select 
-                      className="form-select" 
-                      value={po.status} 
-                      onChange={(e) => handleUpdateStatus(po, e.target.value)}
-                      style={{ 
-                        padding: '3px 8px', 
-                        fontSize: '0.8rem', 
-                        width: '130px', 
-                        fontWeight: 500,
-                        borderRadius: '4px',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: po.status === 'Recibido' || po.status === 'Cerrado' ? 'var(--success-light)' : 'var(--bg-primary)',
-                        color: po.status === 'Recibido' || po.status === 'Cerrado' ? 'var(--success-color)' : 'var(--text-primary)',
-                      }}
-                    >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Producción">Producción</option>
-                      <option value="Inspección">Inspección</option>
-                      <option value="Enviado">Enviado</option>
-                      <option value="Aduanas">Aduanas</option>
-                      <option value="Recibido">Recibido</option>
-                      <option value="Cerrado">Cerrado</option>
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '8px' }}>
-                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(po)}>
-                        <Edit2 size={14} />
-                      </button>
-                      <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => handleDelete(po.id)}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredPOs.map(po => {
+                const totalUnits = po.items && Array.isArray(po.items)
+                  ? po.items.reduce((sum, l) => sum + l.quantity, 0)
+                  : po.quantity;
+                return (
+                  <tr key={po.id}>
+                    <td style={{ fontWeight: 600 }}>PO-{po.order_number}</td>
+                    <td>
+                      {po.items && Array.isArray(po.items) && po.items.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {po.items.map((line, idx) => {
+                            const prod = products.find(p => p.id === line.productId);
+                            return (
+                              <span key={idx} style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
+                                <strong style={{ fontFamily: 'var(--font-mono)' }}>[{prod?.sku_internal || 'N/A'}]</strong> {prod?.name || 'Desconocido'} ({line.quantity} uds)
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span>{po.products?.name}</span>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>SKU: {po.products?.sku_internal}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td>{po.suppliers?.company_name}</td>
+                    <td>{totalUnits} uds</td>
+                    <td style={{ fontWeight: 600 }}>{formatCurrency(po.total_cost)}</td>
+                    <td>{po.order_date}</td>
+                    <td>{po.estimated_arrival || <span style={{ color: 'var(--text-tertiary)' }}>Sin definir</span>}</td>
+                    <td>
+                      <select 
+                        className="form-select" 
+                        value={po.status} 
+                        onChange={(e) => handleUpdateStatus(po, e.target.value)}
+                        style={{ 
+                          padding: '3px 8px', 
+                          fontSize: '0.8rem', 
+                          width: '130px', 
+                          fontWeight: 500,
+                          borderRadius: '4px',
+                          border: '1px solid var(--border-color)',
+                          backgroundColor: po.status === 'Recibido' || po.status === 'Cerrado' ? 'var(--success-light)' : 'var(--bg-secondary)',
+                          color: po.status === 'Recibido' || po.status === 'Cerrado' ? 'var(--success-color)' : 'var(--text-primary)',
+                        }}
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Producción">Producción</option>
+                        <option value="Inspección">Inspección</option>
+                        <option value="Enviado">Enviado</option>
+                        <option value="Aduanas">Aduanas</option>
+                        <option value="Recibido">Recibido</option>
+                        <option value="Cerrado">Cerrado</option>
+                      </select>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '8px' }}>
+                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(po)}>
+                          <Edit2 size={13} />
+                        </button>
+                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handleDelete(po.id)}>
+                          <Trash2 size={13} style={{ color: 'var(--danger-color)' }} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -397,16 +416,16 @@ export default function PurchaseOrders() {
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">{editingPO ? 'Editar Pedido de Compra' : 'Crear Pedido de Compra'}</h3>
               <button className="action-btn" onClick={() => setIsModalOpen(false)}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="modal-body">
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {error && (
-                  <div className="alert-banner alert-banner-danger" style={{ marginBottom: '16px' }}>
+                  <div className="alert-banner alert-banner-danger">
                     {error}
                   </div>
                 )}
@@ -441,21 +460,6 @@ export default function PurchaseOrders() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Seleccionar Producto *</label>
-                  <select 
-                    className="form-select" 
-                    value={productId} 
-                    onChange={(e) => setProductId(e.target.value)}
-                    required
-                  >
-                    <option value="" disabled>Selecciona un producto...</option>
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>[{p.sku_internal}] {p.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
                   <label className="form-label">Seleccionar Proveedor *</label>
                   <select 
                     className="form-select" 
@@ -470,30 +474,80 @@ export default function PurchaseOrders() {
                   </select>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Cantidad (Unidades) *</label>
-                    <input 
-                      type="number" 
-                      className="form-input" 
-                      value={quantity} 
-                      onChange={(e) => setQuantity(e.target.value)} 
-                      min="1"
-                      required 
-                    />
+                {/* Dinamic Order Lines Section */}
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius-sm)', padding: '16px', backgroundColor: 'var(--bg-secondary)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '12px' }}>
+                    Productos y Variantes del Pedido *
+                  </span>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {orderLines.map((line, idx) => (
+                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '8px', alignItems: 'flex-end' }}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          {idx === 0 && <label className="form-label" style={{ fontSize: '0.75rem' }}>Variante / SKU</label>}
+                          <select 
+                            className="form-select" 
+                            value={line.productId} 
+                            onChange={(e) => updateOrderLine(idx, 'productId', e.target.value)}
+                            required
+                          >
+                            <option value="" disabled>Seleccionar...</option>
+                            {products.map(p => (
+                              <option key={p.id} value={p.id}>[{p.sku_internal}] {p.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          {idx === 0 && <label className="form-label" style={{ fontSize: '0.75rem' }}>Cantidad</label>}
+                          <input 
+                            type="number" 
+                            className="form-input" 
+                            value={line.quantity} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateOrderLine(idx, 'quantity', val === '' ? '' : parseInt(val, 10));
+                            }}
+                            min="1"
+                            required 
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          {idx === 0 && <label className="form-label" style={{ fontSize: '0.75rem' }}>Coste Unit (€)</label>}
+                          <input 
+                            type="number" 
+                            step="0.01"
+                            className="form-input" 
+                            value={line.unitCost} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateOrderLine(idx, 'unitCost', val === '' ? '' : parseFloat(val));
+                            }}
+                            min="0.01"
+                            required 
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          className="btn btn-secondary btn-sm btn-icon-only" 
+                          onClick={() => removeOrderLine(idx)}
+                          disabled={orderLines.length === 1}
+                          style={{ height: '38px' }}
+                          title="Eliminar fila"
+                        >
+                          <Trash2 size={13} style={{ color: 'var(--danger-color)' }} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Coste Unitario (€) *</label>
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      className="form-input" 
-                      value={unitCost} 
-                      onChange={(e) => setUnitCost(e.target.value)} 
-                      min="0.01"
-                      required 
-                    />
-                  </div>
+
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary btn-sm" 
+                    style={{ marginTop: '12px' }} 
+                    onClick={addOrderLine}
+                  >
+                    <Plus size={14} /> Añadir Producto
+                  </button>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -520,23 +574,26 @@ export default function PurchaseOrders() {
 
                 {status === 'Recibido' && !editingPO?.batch_id && (
                   <div className="form-group" style={{ padding: '12px', border: '1px dashed var(--accent-color)', borderRadius: 'var(--border-radius-sm)', backgroundColor: 'var(--accent-light)' }}>
-                    <label className="form-label" style={{ color: 'var(--accent-color)', fontWeight: 600 }}>Número de Lote / Batch</label>
+                    <label className="form-label" style={{ color: 'var(--accent-color)', fontWeight: 600 }}>Prefijo de Lote / Batch</label>
                     <input 
                       type="text" 
                       className="form-input" 
                       value={batchNo} 
                       onChange={(e) => setBatchNo(e.target.value)} 
-                      placeholder={`Ej. LOT-${orderNumber}-${new Date().getFullYear()}`} 
+                      placeholder={`Ej. LOT-${orderNumber}`} 
                     />
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                      Al guardar como "Recibido", se creará automáticamente un lote físico con esta clave y se sumará el stock al almacén.
+                      Al guardar como "Recibido", se creará automáticamente un lote físico por cada variante del pedido y se sumará el stock.
                     </span>
                   </div>
                 )}
 
-                <div className="form-group" style={{ marginTop: '8px' }}>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Valor Total del Pedido (Calculado): {formatCurrency(parseInt(quantity || 0) * parseFloat(unitCost || 0))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Valor Total del Pedido (Calculado):
+                  </span>
+                  <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-color)' }}>
+                    {formatCurrency(calculatedTotalCost)}
                   </span>
                 </div>
 
