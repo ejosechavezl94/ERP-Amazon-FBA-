@@ -9,7 +9,8 @@ import {
   User,
   Users,
   Trash2,
-  Clock
+  Clock,
+  ChevronDown
 } from "lucide-react";
 
 export default function InternalChat({ session, profile }) {
@@ -29,6 +30,7 @@ export default function InternalChat({ session, profile }) {
   const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
   const channelRef = useRef(null);
@@ -39,6 +41,7 @@ export default function InternalChat({ session, profile }) {
   const emojiPickerRef = useRef(null);
   const filterDropdownRef = useRef(null);
   const composeDropdownRef = useRef(null);
+  const statusDropdownRef = useRef(null);
 
   // Active chat contact (defaults to first contact, or real partner)
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -74,6 +77,9 @@ export default function InternalChat({ session, profile }) {
       }
       if (composeDropdownRef.current && !composeDropdownRef.current.contains(event.target)) {
         setIsComposeDropdownOpen(false);
+      }
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target)) {
+        setIsStatusDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -368,6 +374,126 @@ export default function InternalChat({ session, profile }) {
           overflow: hidden;
           font-family: var(--font-sans);
           color: var(--text-primary);
+        }
+
+        /* Custom Status Dropdown */
+        .status-dropdown-container {
+          position: relative;
+          display: inline-block;
+        }
+        .status-trigger-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background-color: var(--bg-secondary);
+          border: 1px solid var(--border-color);
+          border-radius: 20px;
+          cursor: pointer;
+          color: var(--text-primary);
+          font-size: 0.8rem;
+          font-weight: 600;
+          transition: all 0.2s ease;
+          outline: none;
+        }
+        .status-trigger-btn:hover {
+          background-color: var(--bg-tertiary);
+          border-color: var(--accent-color);
+          box-shadow: 0 0 8px rgba(99, 102, 241, 0.15);
+        }
+        .status-dot-pulse {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          position: relative;
+          display: inline-block;
+        }
+        .status-dot-pulse.online {
+          background-color: #22c55e;
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+          animation: status-pulse-green 2s infinite;
+        }
+        .status-dot-pulse.away {
+          background-color: #f59e0b;
+        }
+        .status-dot-pulse.busy {
+          background-color: #ef4444;
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+          animation: status-pulse-red 2s infinite;
+        }
+        @keyframes status-pulse-green {
+          0% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+          }
+        }
+        @keyframes status-pulse-red {
+          0% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+          }
+        }
+        
+        .status-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 6px;
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+          z-index: 100;
+          padding: 6px;
+          width: 150px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          animation: status-dropdown-fade 0.18s ease-out;
+        }
+        @keyframes status-dropdown-fade {
+          from {
+            opacity: 0;
+            transform: translateY(-4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .status-option {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          border: none;
+          background: none;
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+          font-weight: 500;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          width: 100%;
+          text-align: left;
+        }
+        .status-option:hover {
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+        }
+        .status-option.active {
+          background-color: var(--accent-light);
+          color: var(--accent-color);
         }
 
         /* Sub-sidebar Styling */
@@ -710,25 +836,56 @@ export default function InternalChat({ session, profile }) {
           <div className="chat-list-header">
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span className="chat-list-title">Chats</span>
-              <select
-                value={userStatus}
-                onChange={(e) => handleStatusChange(e.target.value)}
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "var(--border-radius)",
-                  border: "1px solid var(--border-color)",
-                  backgroundColor: "var(--bg-secondary)",
-                  color: "var(--text-primary)",
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  outline: "none",
-                  cursor: "pointer"
-                }}
-              >
-                <option value="online">🟢 Activo</option>
-                <option value="away">🟡 Ausente</option>
-                <option value="busy">🔴 Ocupado</option>
-              </select>
+              <div className="status-dropdown-container" ref={statusDropdownRef}>
+                <button
+                  className="status-trigger-btn"
+                  onClick={() => setIsStatusDropdownOpen(!isStatusDropdownOpen)}
+                >
+                  <span className={`status-dot-pulse ${userStatus}`} />
+                  <span>
+                    {userStatus === "online" ? "Activo" : userStatus === "away" ? "Ausente" : "Ocupado"}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    style={{
+                      opacity: 0.7,
+                      transform: isStatusDropdownOpen ? "rotate(180deg)" : "none",
+                      transition: "transform 0.2s"
+                    }}
+                  />
+                </button>
+                {isStatusDropdownOpen && (
+                  <div className="status-menu">
+                    <button
+                      className={`status-option ${userStatus === "online" ? "active" : ""}`}
+                      onClick={() => {
+                        handleStatusChange("online");
+                        setIsStatusDropdownOpen(false);
+                      }}
+                    >
+                      <span className="status-dot-pulse online" /> Activo
+                    </button>
+                    <button
+                      className={`status-option ${userStatus === "away" ? "active" : ""}`}
+                      onClick={() => {
+                        handleStatusChange("away");
+                        setIsStatusDropdownOpen(false);
+                      }}
+                    >
+                      <span className="status-dot-pulse away" /> Ausente
+                    </button>
+                    <button
+                      className={`status-option ${userStatus === "busy" ? "active" : ""}`}
+                      onClick={() => {
+                        handleStatusChange("busy");
+                        setIsStatusDropdownOpen(false);
+                      }}
+                    >
+                      <span className="status-dot-pulse busy" /> Ocupado
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="chat-list-actions">
               {/* Compose Dropdown */}
