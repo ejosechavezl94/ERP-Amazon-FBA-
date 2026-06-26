@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import {
   MessageCircle,
@@ -24,7 +24,6 @@ export default function InternalChat({ session, profile }) {
   // Presence and states
   const [userStatus, setUserStatus] = useState(localStorage.getItem("chat_status") || "online");
   const [onlineUsers, setOnlineUsers] = useState({});
-  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isComposeDropdownOpen, setIsComposeDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isChatSearchOpen, setIsChatSearchOpen] = useState(false);
@@ -39,7 +38,6 @@ export default function InternalChat({ session, profile }) {
 
   // Refs for clicking outside
   const emojiPickerRef = useRef(null);
-  const filterDropdownRef = useRef(null);
   const composeDropdownRef = useRef(null);
   const statusDropdownRef = useRef(null);
 
@@ -71,9 +69,6 @@ export default function InternalChat({ session, profile }) {
     function handleClickOutside(event) {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
         setIsEmojiPickerOpen(false);
-      }
-      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target)) {
-        setIsFilterDropdownOpen(false);
       }
       if (composeDropdownRef.current && !composeDropdownRef.current.contains(event.target)) {
         setIsComposeDropdownOpen(false);
@@ -224,14 +219,14 @@ export default function InternalChat({ session, profile }) {
     };
   }, [currentUser?.id]);
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // Scroll to bottom when messages update
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
 
   const handleStatusChange = async (newStatus) => {
     setUserStatus(newStatus);
@@ -304,7 +299,7 @@ export default function InternalChat({ session, profile }) {
     try {
       const date = new Date(dateStr);
       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } catch (e) {
+    } catch {
       return "";
     }
   };
@@ -313,7 +308,7 @@ export default function InternalChat({ session, profile }) {
     try {
       const date = new Date(dateStr);
       return date.toLocaleDateString([], { day: "numeric", month: "short" });
-    } catch (e) {
+    } catch {
       return "";
     }
   };
@@ -334,7 +329,7 @@ export default function InternalChat({ session, profile }) {
     if (allContacts.length > 0 && !currentChatId) {
       setCurrentChatId(allContacts[0].id);
     }
-  }, [profiles]);
+  }, [profiles, allContacts, currentChatId]);
 
   const activeContact = allContacts.find((c) => c.id === currentChatId) || allContacts[0];
 
@@ -923,7 +918,6 @@ export default function InternalChat({ session, profile }) {
           <div className="contact-list">
             {filteredContacts.map((contact) => {
               const active = contact.id === currentChatId;
-              const isOnline = contact.isMock || onlineUsers[contact.id]?.status === "online";
               const lastMessage = !contact.isMock
                 ? messages[messages.length - 1]?.message || "Ningún mensaje aún"
                 : "Mensaje de demostración de chat...";
@@ -934,7 +928,6 @@ export default function InternalChat({ session, profile }) {
                   className={`contact-card ${active ? "active" : ""}`}
                   onClick={() => {
                     setCurrentChatId(contact.id);
-                    setIsFilterDropdownOpen(false);
                     setIsComposeDropdownOpen(false);
                   }}
                 >
