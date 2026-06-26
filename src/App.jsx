@@ -16,7 +16,7 @@ import SalesPage from './components/SalesPage';
 import SessionNavBar from './components/SessionNavBar';
 import InternalChat from './components/InternalChat';
 
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, Check } from 'lucide-react';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -28,6 +28,13 @@ function App() {
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
+  const [dismissedAlerts, setDismissedAlerts] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('dismissed_stock_alerts')) || {};
+    } catch {
+      return {};
+    }
+  });
 
   async function fetchUserProfile(userId) {
     if (!isConfigured) return;
@@ -139,19 +146,52 @@ function App() {
         .select('id, product_name, stock_available, stock_min');
       if (error) throw error;
       
-      const alerts = data.filter(item => item.stock_available < item.stock_min);
-      setLowStockAlerts(alerts);
+      const rawAlerts = data.filter(item => item.stock_available < item.stock_min);
+      
+      // Sync dismissed alerts map
+      setDismissedAlerts(prev => {
+        const updated = { ...prev };
+        let changed = false;
+        
+        // Remove items that are no longer low-stock or have changed their stock level
+        Object.keys(updated).forEach(id => {
+          const matching = rawAlerts.find(a => a.id === id);
+          if (!matching || matching.stock_available !== updated[id]) {
+            delete updated[id];
+            changed = true;
+          }
+        });
+        
+        if (changed) {
+          localStorage.setItem('dismissed_stock_alerts', JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      // Filter based on currently active dismissed map
+      const storedDismissedStr = localStorage.getItem('dismissed_stock_alerts');
+      const storedDismissed = storedDismissedStr ? JSON.parse(storedDismissedStr) : {};
+      
+      const activeAlerts = rawAlerts.filter(item => storedDismissed[item.id] !== item.stock_available);
+      setLowStockAlerts(activeAlerts);
       
       // Trigger native notification if stock is low
-      if (alerts.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+      if (activeAlerts.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Alerta de Stock Bajo FBA', {
-          body: `Atención: Tienes ${alerts.length} productos con stock por debajo del límite mínimo.`,
+          body: `Atención: Tienes ${activeAlerts.length} productos con stock por debajo del límite mínimo.`,
           icon: '/amazon-logo.png'
         });
       }
     } catch (err) {
       console.error('Error fetching low stock alerts:', err);
     }
+  };
+
+  const dismissAlert = (id, stockAvailable) => {
+    const updated = { ...dismissedAlerts, [id]: stockAvailable };
+    setDismissedAlerts(updated);
+    localStorage.setItem('dismissed_stock_alerts', JSON.stringify(updated));
+    setLowStockAlerts(prev => prev.filter(item => item.id !== id));
   };
 
   useEffect(() => {
@@ -389,16 +429,38 @@ function App() {
                               border: '1px solid rgba(239, 68, 68, 0.2)', 
                               borderRadius: 'var(--border-radius-sm)',
                               display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px'
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              gap: '8px'
                             }}
                           >
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                              {alert.product_name}
-                            </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                              Stock: <strong style={{ color: 'var(--danger-color)' }}>{alert.stock_available}</strong> / Mínimo: {alert.stock_min}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {alert.product_name}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                                Stock: <strong style={{ color: 'var(--danger-color)' }}>{alert.stock_available}</strong> / Mínimo: {alert.stock_min}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => dismissAlert(alert.id, alert.stock_available)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'background-color 0.2s'
+                              }}
+                              className="icon-btn-hover"
+                              title="Marcar como leído"
+                            >
+                              <Check size={14} />
+                            </button>
                           </div>
                         ))
                       )}
