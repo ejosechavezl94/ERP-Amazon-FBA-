@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase, isConfigured } from './supabaseClient';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
@@ -16,7 +16,7 @@ import SalesPage from './components/SalesPage';
 import SessionNavBar from './components/SessionNavBar';
 import InternalChat from './components/InternalChat';
 
-import { Search } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -25,6 +25,9 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [lowStockAlerts, setLowStockAlerts] = useState([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef(null);
 
   async function fetchUserProfile(userId) {
     if (!isConfigured) return;
@@ -116,6 +119,46 @@ function App() {
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
   }, []);
+
+  // Listen to clicks outside the notifications popover
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchLowStockAlerts = async () => {
+    if (!isConfigured) return;
+    try {
+      const { data, error } = await supabase
+        .from('view_inventory_details')
+        .select('id, product_name, stock_available, stock_min');
+      if (error) throw error;
+      
+      const alerts = data.filter(item => item.stock_available < item.stock_min);
+      setLowStockAlerts(alerts);
+      
+      // Trigger native notification if stock is low
+      if (alerts.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification('Alerta de Stock Bajo FBA', {
+          body: `Atención: Tienes ${alerts.length} productos con stock por debajo del límite mínimo.`,
+          icon: '/amazon-logo.png'
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching low stock alerts:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (session) {
+      fetchLowStockAlerts();
+    }
+  }, [session, currentTab]);
   // 4. Ask for Web Notification permission
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'default') {
@@ -229,6 +272,17 @@ function App() {
 
   return (
     <div className="app-container">
+      <style>{`
+        .icon-btn-hover:hover {
+          background-color: var(--bg-secondary);
+          color: var(--text-primary);
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* Sidebar navigation */}
       <SessionNavBar 
         currentTab={currentTab} 
@@ -251,7 +305,103 @@ function App() {
             <span className="search-shortcut">⌘K</span>
           </button>
 
-          <div className="top-bar-actions">
+          <div className="top-bar-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px', position: 'relative' }}>
+            {/* Notification Bell */}
+            {isConfigured && session && (
+              <div ref={notifRef} style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '6px',
+                    borderRadius: '50%',
+                    position: 'relative',
+                    transition: 'background-color 0.2s'
+                  }}
+                  className="icon-btn-hover"
+                  title="Alertas de Stock"
+                >
+                  <Bell size={18} />
+                  {lowStockAlerts.length > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '0',
+                      right: '0',
+                      backgroundColor: 'var(--danger-color)',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: '14px',
+                      height: '14px',
+                      fontSize: '0.65rem',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 0 0 2px var(--bg-primary)'
+                    }}>
+                      {lowStockAlerts.length}
+                    </span>
+                  )}
+                </button>
+
+                {isNotifOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: '0',
+                    marginTop: '8px',
+                    width: '320px',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--border-radius-lg)',
+                    boxShadow: 'var(--shadow-lg)',
+                    zIndex: 1000,
+                    padding: '16px',
+                    animation: 'fadeIn 0.2s ease'
+                  }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                      Alertas de Inventario Bajo ({lowStockAlerts.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '250px', overflowY: 'auto' }}>
+                      {lowStockAlerts.length === 0 ? (
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '12px 0' }}>
+                          ¡Todo al día! No hay alertas de stock bajo.
+                        </p>
+                      ) : (
+                        lowStockAlerts.map(alert => (
+                          <div 
+                            key={alert.id} 
+                            style={{ 
+                              padding: '8px 12px', 
+                              backgroundColor: 'rgba(239, 68, 68, 0.05)', 
+                              border: '1px solid rgba(239, 68, 68, 0.2)', 
+                              borderRadius: 'var(--border-radius-sm)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px'
+                            }}
+                          >
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                              {alert.product_name}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                              Stock: <strong style={{ color: 'var(--danger-color)' }}>{alert.stock_available}</strong> / Mínimo: {alert.stock_min}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {profile?.full_name && (
               <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
                 Bienvenido, {profile.full_name}
