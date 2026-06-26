@@ -16,42 +16,9 @@ import SalesPage from './components/SalesPage';
 import SessionNavBar from './components/SessionNavBar';
 import InternalChat from './components/InternalChat';
 
-import { 
-  LayoutDashboard, Package, TrendingUp, Users, ShoppingCart, 
-  FileText, CheckSquare, Settings as SettingsIcon, LogOut, Sun, Moon, Search 
-} from 'lucide-react';
+import { Search } from 'lucide-react';
 
 function App() {
-  if (!isConfigured) {
-    return (
-      <div className="auth-wrapper" style={{ padding: '20px' }}>
-        <div className="auth-card" style={{ maxWidth: '520px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-            <h1 className="auth-title" style={{ color: 'var(--danger-color)' }}>Falta Configuración</h1>
-            <p className="auth-subtitle" style={{ marginTop: '12px', fontSize: '0.9rem', lineHeight: '1.6' }}>
-              Las credenciales de conexión con Supabase no están configuradas en el entorno del servidor de Vercel.
-            </p>
-          </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-            <p>Para solucionar este problema y ver tu aplicación en Vercel, sigue estos pasos:</p>
-            <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <li>Entra a tu panel del proyecto en <strong>Vercel</strong>.</li>
-              <li>Ve a la pestaña de <strong>Settings</strong> y luego a <strong>Environment Variables</strong>.</li>
-              <li>Añade las siguientes dos variables:
-                <ul style={{ paddingLeft: '20px', marginTop: '6px', listStyleType: 'disc', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <li>Nombre: <code>VITE_SUPABASE_URL</code> <br/> Valor: <code>https://oxstzslugnzoknzlqiyh.supabase.co</code></li>
-                  <li>Nombre: <code>VITE_SUPABASE_ANON_KEY</code> <br/> Valor: (Copia la clave larga de tu archivo <code>.env</code> local)</li>
-                </ul>
-              </li>
-              <li>Haz clic en <strong>Save</strong> para guardar las variables.</li>
-              <li>Ve a la pestaña de <strong>Deployments</strong> en Vercel, selecciona tu último despliegue, pulsa en los tres puntos y selecciona <strong>Redeploy</strong> (con la opción "rebuild" activa) para aplicar la configuración.</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -59,8 +26,24 @@ function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState(0);
 
+  async function fetchUserProfile(userId) {
+    if (!isConfigured) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (error) throw error;
+      setProfile(data);
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  }
+
   // 1. Session and Auth State management with 2FA check
   useEffect(() => {
+    if (!isConfigured) return;
     console.log("App mounted. Checking session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("App getSession resolved. Session:", session ? "Exists" : "Null");
@@ -112,20 +95,6 @@ function App() {
     };
   }, []);
 
-  const fetchUserProfile = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (error) throw error;
-      setProfile(data);
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-    }
-  };
-
   // 2. Light / Dark Mode Toggle
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -156,7 +125,7 @@ function App() {
 
   // 5. Listen to new chat messages for notifications & badge increment
   useEffect(() => {
-    if (!session) return;
+    if (!isConfigured || !session) return;
 
     let profilesMap = {};
     supabase
@@ -215,10 +184,41 @@ function App() {
     }
   }, [currentTab]);
   const handleSignOut = async () => {
+    if (!isConfigured) return;
     if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
       await supabase.auth.signOut();
     }
   };
+
+  if (!isConfigured) {
+    return (
+      <div className="auth-wrapper" style={{ padding: '20px' }}>
+        <div className="auth-card" style={{ maxWidth: '520px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+            <h1 className="auth-title" style={{ color: 'var(--danger-color)' }}>Falta Configuración</h1>
+            <p className="auth-subtitle" style={{ marginTop: '12px', fontSize: '0.9rem', lineHeight: '1.6' }}>
+              Las credenciales de conexión con Supabase no están configuradas en el entorno del servidor de Vercel.
+            </p>
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+            <p>Para solucionar este problema y ver tu aplicación en Vercel, sigue estos pasos:</p>
+            <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <li>Entra a tu panel del proyecto en <strong>Vercel</strong>.</li>
+              <li>Ve a la pestaña de <strong>Settings</strong> y luego a <strong>Environment Variables</strong>.</li>
+              <li>Añade las siguientes dos variables:
+                <ul style={{ paddingLeft: '20px', marginTop: '6px', listStyleType: 'disc', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <li>Nombre: <code>VITE_SUPABASE_URL</code> <br/> Valor: <code>https://oxstzslugnzoknzlqiyh.supabase.co</code></li>
+                  <li>Nombre: <code>VITE_SUPABASE_ANON_KEY</code> <br/> Valor: (Copia la clave larga de tu archivo <code>.env</code> local)</li>
+                </ul>
+              </li>
+              <li>Haz clic en <strong>Save</strong> para guardar las variables.</li>
+              <li>Ve a la pestaña de <strong>Deployments</strong> en Vercel, selecciona tu último despliegue, pulsa en los tres puntos y selecciona <strong>Redeploy</strong> (con la opción "rebuild" activa) para aplicar la configuración.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     return <Auth onAuthSuccess={(sess) => {
@@ -226,14 +226,6 @@ function App() {
       fetchUserProfile(sess.user.id);
     }} />;
   }
-
-  // Get initials for profile badge
-  const getUserInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    }
-    return session.user.email?.slice(0, 2).toUpperCase() || 'U';
-  };
 
   return (
     <div className="app-container">
