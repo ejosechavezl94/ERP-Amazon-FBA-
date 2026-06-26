@@ -35,6 +35,13 @@ function App() {
       return {};
     }
   });
+  const [seenAlerts, setSeenAlerts] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('seen_stock_alerts')) || [];
+    } catch {
+      return [];
+    }
+  });
 
   async function fetchUserProfile(userId) {
     if (!isConfigured) return;
@@ -174,11 +181,26 @@ function App() {
       
       const activeAlerts = rawAlerts.filter(item => storedDismissed[item.id] !== item.stock_available);
       setLowStockAlerts(activeAlerts);
+
+      // Clean up seenAlerts for items no longer in activeAlerts
+      setSeenAlerts(prev => {
+        const activeIds = activeAlerts.map(a => a.id);
+        const updatedSeen = prev.filter(id => activeIds.includes(id));
+        if (updatedSeen.length !== prev.length) {
+          localStorage.setItem('seen_stock_alerts', JSON.stringify(updatedSeen));
+          return updatedSeen;
+        }
+        return prev;
+      });
       
       // Trigger native notification if stock is low
-      if (activeAlerts.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
+      const storedSeenStr = localStorage.getItem('seen_stock_alerts');
+      const storedSeen = storedSeenStr ? JSON.parse(storedSeenStr) : [];
+      const unseenActiveAlerts = activeAlerts.filter(a => !storedSeen.includes(a.id));
+
+      if (unseenActiveAlerts.length > 0 && 'Notification' in window && Notification.permission === 'granted') {
         new Notification('Alerta de Stock Bajo FBA', {
-          body: `Atención: Tienes ${activeAlerts.length} productos con stock por debajo del límite mínimo.`,
+          body: `Atención: Tienes ${unseenActiveAlerts.length} productos con stock por debajo del límite mínimo.`,
           icon: '/amazon-logo.png'
         });
       }
@@ -192,6 +214,23 @@ function App() {
     setDismissedAlerts(updated);
     localStorage.setItem('dismissed_stock_alerts', JSON.stringify(updated));
     setLowStockAlerts(prev => prev.filter(item => item.id !== id));
+    
+    // Also remove from seenAlerts
+    setSeenAlerts(prev => {
+      const filtered = prev.filter(x => x !== id);
+      localStorage.setItem('seen_stock_alerts', JSON.stringify(filtered));
+      return filtered;
+    });
+  };
+
+  const handleBellClick = () => {
+    const nextState = !isNotifOpen;
+    setIsNotifOpen(nextState);
+    if (nextState && lowStockAlerts.length > 0) {
+      const currentIds = lowStockAlerts.map(a => a.id);
+      setSeenAlerts(currentIds);
+      localStorage.setItem('seen_stock_alerts', JSON.stringify(currentIds));
+    }
   };
 
   useEffect(() => {
@@ -356,7 +395,7 @@ function App() {
             {isConfigured && session && (
               <div ref={notifRef} style={{ position: 'relative' }}>
                 <button 
-                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  onClick={handleBellClick}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -374,7 +413,7 @@ function App() {
                   title="Alertas de Stock"
                 >
                   <Bell size={18} />
-                  {lowStockAlerts.length > 0 && (
+                  {lowStockAlerts.filter(a => !seenAlerts.includes(a.id)).length > 0 && (
                     <span style={{
                       position: 'absolute',
                       top: '0',
@@ -391,7 +430,7 @@ function App() {
                       justifyContent: 'center',
                       boxShadow: '0 0 0 2px var(--bg-primary)'
                     }}>
-                      {lowStockAlerts.length}
+                      {lowStockAlerts.filter(a => !seenAlerts.includes(a.id)).length}
                     </span>
                   )}
                 </button>
