@@ -155,9 +155,15 @@ function App() {
   };
 
   useEffect(() => {
-    if (session) {
+    if (!session) return;
+
+    fetchLowStockAlerts();
+
+    const interval = setInterval(() => {
       fetchLowStockAlerts();
-    }
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, [session, currentTab]);
   // 4. Ask for Web Notification permission
   useEffect(() => {
