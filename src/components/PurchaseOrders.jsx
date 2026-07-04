@@ -18,6 +18,7 @@ export default function PurchaseOrders() {
   const [estArrival, setEstArrival] = useState('');
   const [status, setStatus] = useState('Pendiente');
   const [batchNo, setBatchNo] = useState('');
+  const [warehouseType, setWarehouseType] = useState('LOCAL');
   const [error, setError] = useState(null);
 
   // Dynamic order lines state (Array of objects)
@@ -68,6 +69,7 @@ export default function PurchaseOrders() {
     setEstArrival('');
     setStatus('Pendiente');
     setBatchNo('');
+    setWarehouseType('LOCAL');
     setError(null);
     setIsModalOpen(true);
   };
@@ -80,6 +82,7 @@ export default function PurchaseOrders() {
     setEstArrival(po.estimated_arrival || '');
     setStatus(po.status);
     setBatchNo('');
+    setWarehouseType(po.warehouse_type || 'LOCAL');
     setError(null);
 
     // If purchase order contains items array, load it; otherwise fall back to single product columns
@@ -135,7 +138,7 @@ export default function PurchaseOrders() {
       order_number: orderNumber,
       // Store first line's details as single values for backwards compatibility
       product_id: orderLines[0]?.productId || null,
-      quantity: orderLines.reduce((sum, l) => sum + l.quantity, 0),
+      quantity: orderLines.reduce((sum, l) => sum + (parseInt(l.quantity) || 0), 0),
       unit_cost: orderLines[0]?.unitCost || 0,
       total_cost: calculatedTotalCost,
       items: orderLines, // save dynamic array of objects to jsonb column
@@ -143,6 +146,7 @@ export default function PurchaseOrders() {
       order_date: orderDate,
       estimated_arrival: estArrival || null,
       status,
+      warehouse_type: warehouseType,
       updated_at: new Date().toISOString()
     };
 
@@ -176,7 +180,7 @@ export default function PurchaseOrders() {
         // If PO was created directly in 'Enviado' or 'Aduanas', update transit inventory
         if (status === 'Enviado' || status === 'Aduanas') {
           for (const line of orderLines) {
-            await updateTransitInventory(line.productId, line.quantity);
+            await updateTransitInventory(line.productId, line.quantity, warehouseType);
           }
         } else if (status === 'Recibido') {
           await handlePOReceipt(savedPO);
@@ -191,15 +195,23 @@ export default function PurchaseOrders() {
   };
 
   // Helper to increment stock_in_transit
-  const updateTransitInventory = async (pId, qty) => {
-    const { error } = await supabase.rpc('rpc_update_transit_inventory', { p_product_id: pId, p_qty: qty });
+  const updateTransitInventory = async (pId, qty, wType) => {
+    const { error } = await supabase.rpc('rpc_update_transit_inventory', { 
+      p_product_id: pId, 
+      p_qty: qty, 
+      p_warehouse_type: wType || 'LOCAL' 
+    });
     if (error) throw error;
   };
 
   // Handle PO status change to Recibido
   const handlePOReceipt = async (po) => {
     try {
-      const { error } = await supabase.rpc('rpc_handle_po_receipt', { p_po_id: po.id, p_batch_no: batchNo || '' });
+      const { error } = await supabase.rpc('rpc_handle_po_receipt', { 
+        p_po_id: po.id, 
+        p_batch_no: batchNo || '', 
+        p_warehouse_type: po.warehouse_type || 'LOCAL' 
+      });
       if (error) throw error;
     } catch (err) {
       console.error('Error handling PO receipt actions:', err);
@@ -230,7 +242,7 @@ export default function PurchaseOrders() {
             : [{ productId: po.product_id, quantity: po.quantity }];
           
           for (const line of lines) {
-            await updateTransitInventory(line.productId || line.product_id, line.quantity);
+            await updateTransitInventory(line.productId || line.product_id, line.quantity, po.warehouse_type || 'LOCAL');
           }
         }
       }
@@ -430,7 +442,7 @@ export default function PurchaseOrders() {
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                   <div className="form-group">
                     <label className="form-label">Número de Pedido (PO) *</label>
                     <input 
@@ -455,6 +467,17 @@ export default function PurchaseOrders() {
                       <option value="Aduanas">Aduanas</option>
                       <option value="Recibido">Recibido</option>
                       <option value="Cerrado">Cerrado</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Almacén de Destino</label>
+                    <select 
+                      className="form-select" 
+                      value={warehouseType} 
+                      onChange={(e) => setWarehouseType(e.target.value)}
+                    >
+                      <option value="LOCAL">LOCAL</option>
+                      <option value="FBA">FBA (Amazon)</option>
                     </select>
                   </div>
                 </div>

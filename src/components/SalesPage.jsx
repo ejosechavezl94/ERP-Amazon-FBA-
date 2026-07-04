@@ -14,7 +14,7 @@ const mesActual = () => {
   return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, "0")}`;
 };
 
-const EMPTY_SALE = { productId: "", quantity: 1, date: new Date().toISOString().split("T")[0], notes: "" };
+const EMPTY_SALE = { productId: "", quantity: 1, date: new Date().toISOString().split("T")[0], notes: "", warehouseType: "LOCAL" };
 
 export default function SalesPage() {
   const [mes, setMes] = useState(mesActual);
@@ -102,6 +102,7 @@ export default function SalesPage() {
           sale_date: formS.date,
           quantity: parseInt(formS.quantity, 10),
           notes: formS.notes.trim() || null,
+          warehouse_type: formS.warehouseType || 'LOCAL',
           user_id: (await supabase.auth.getSession()).data.session?.user?.id
         }]);
 
@@ -299,6 +300,18 @@ export default function SalesPage() {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="g-field">
+              <label>Almacén *</label>
+              <select
+                value={formS.warehouseType}
+                onChange={e => setFormS({ ...formS, warehouseType: e.target.value })}
+                required
+              >
+                <option value="LOCAL">LOCAL</option>
+                <option value="FBA">FBA (Amazon)</option>
+              </select>
             </div>
 
             <div className="g-field">

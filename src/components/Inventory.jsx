@@ -34,6 +34,7 @@ export default function Inventory() {
   const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
   const [saleQuantity, setSaleQuantity] = useState(1);
   const [saleNotes, setSaleNotes] = useState('');
+  const [saleWarehouseType, setSaleWarehouseType] = useState('LOCAL');
 
   // Movement edit form states
   const [movementType, setMovementType] = useState('');
@@ -159,8 +160,9 @@ export default function Inventory() {
     }
   };
 
-  const openSaleModal = (productId = '') => {
+  const openSaleModal = (productId = '', wType = 'LOCAL') => {
     setSaleProductId(productId);
+    setSaleWarehouseType(wType);
     setSaleQuantity(1);
     setSaleDate(new Date().toISOString().split('T')[0]);
     setSaleNotes('');
@@ -181,7 +183,7 @@ export default function Inventory() {
 
     try {
       // Get current available stock to verify
-      const selectedInv = inventory.find(i => i.product_id === saleProductId);
+      const selectedInv = inventory.find(i => i.product_id === saleProductId && i.warehouse_type === saleWarehouseType);
       if (selectedInv && (selectedInv.stock_current - selectedInv.stock_reserved) < parseInt(saleQuantity)) {
         if (!window.confirm('¡Atención! La cantidad vendida excede el stock disponible actual. ¿Deseas forzar el registro de la venta igualmente?')) {
           setSubmitting(false);
@@ -196,6 +198,7 @@ export default function Inventory() {
           sale_date: saleDate,
           quantity: parseInt(saleQuantity),
           notes: saleNotes || null,
+          warehouse_type: saleWarehouseType,
           user_id: (await supabase.auth.getSession()).data.session?.user?.id
         }]);
 
@@ -463,7 +466,7 @@ export default function Inventory() {
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <div style={{ display: 'inline-flex', gap: '8px' }}>
-                            <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openSaleModal(item.product_id)} title="Registrar Venta">
+                            <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openSaleModal(item.product_id, item.warehouse_type)} title="Registrar Venta">
                               <ShoppingCart size={14} />
                             </button>
                             <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(item)} title="Ajustar Stock / Parámetros">
@@ -690,6 +693,19 @@ export default function Inventory() {
                     {productsList.map(p => (
                       <option key={p.id} value={p.id}>{p.sku_internal} - {p.name}</option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Almacén *</label>
+                  <select 
+                    className="form-select" 
+                    value={saleWarehouseType} 
+                    onChange={(e) => setSaleWarehouseType(e.target.value)}
+                    required
+                  >
+                    <option value="LOCAL">LOCAL</option>
+                    <option value="FBA">FBA (Amazon)</option>
                   </select>
                 </div>
 
