@@ -703,6 +703,12 @@ body {
   border-color: var(--border-color);
 }
 
+.badge-primary {
+  background-color: var(--accent-light);
+  color: var(--accent-color);
+  border-color: var(--accent-border);
+}
+
 /* Kanban Board Module */
 .kanban-board {
   display: flex;

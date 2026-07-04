@@ -428,8 +428,18 @@ export default function Inventory() {
                       }}>
                         <td style={{ fontWeight: 600 }}>{item.sku_internal}</td>
                         <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span>{item.product_name}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontWeight: 500 }}>{item.product_name}</span>
+                              <span className={`badge ${item.warehouse_type === 'FBA' ? 'badge-primary' : 'badge-neutral'}`} style={{ 
+                                fontSize: '0.7rem', 
+                                padding: '2px 6px',
+                                textTransform: 'uppercase',
+                                fontWeight: 'bold'
+                              }}>
+                                {item.warehouse_type}
+                              </span>
+                            </div>
                             {item.sku_amazon && <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>AMZN: {item.sku_amazon}</span>}
                           </div>
                         </td>

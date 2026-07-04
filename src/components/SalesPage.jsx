@@ -219,7 +219,19 @@ export default function SalesPage() {
               <tr key={s.id}>
                 <td className="g-muted">{s.sale_date}</td>
                 <td style={{ fontWeight: 600 }}>{s.products?.sku_internal}</td>
-                <td>{s.products?.name}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{s.products?.name}</span>
+                    <span className={`badge ${s.warehouse_type === 'FBA' ? 'badge-primary' : 'badge-neutral'}`} style={{ 
+                      fontSize: '0.65rem', 
+                      padding: '1px 5px', 
+                      textTransform: 'uppercase',
+                      fontWeight: 'bold'
+                    }}>
+                      {s.warehouse_type || 'LOCAL'}
+                    </span>
+                  </div>
+                </td>
                 <td style={{ textAlign: "right" }}>{s.quantity}</td>
                 <td style={{ textAlign: "right" }}>{fmt(s.products?.target_price || 0)}</td>
                 <td style={{ textAlign: "right", fontWeight: 600 }}>{fmt(s.quantity * (s.products?.target_price || 0))}</td>

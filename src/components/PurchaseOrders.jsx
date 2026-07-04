@@ -358,7 +358,20 @@ export default function PurchaseOrders() {
                   : po.quantity;
                 return (
                   <tr key={po.id}>
-                    <td style={{ fontWeight: 600 }}>PO-{po.order_number}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span>PO-{po.order_number}</span>
+                        <span className={`badge ${po.warehouse_type === 'FBA' ? 'badge-primary' : 'badge-neutral'}`} style={{ 
+                          fontSize: '0.65rem', 
+                          padding: '1px 5px', 
+                          width: 'fit-content',
+                          textTransform: 'uppercase',
+                          fontWeight: 'bold'
+                        }}>
+                          {po.warehouse_type || 'LOCAL'}
+                        </span>
+                      </div>
+                    </td>
                     <td>
                       {po.items && Array.isArray(po.items) && po.items.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
