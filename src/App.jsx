@@ -7,14 +7,13 @@ import Inventory from './components/Inventory';
 import Batches from './components/Batches';
 import Suppliers from './components/Suppliers';
 import PurchaseOrders from './components/PurchaseOrders';
-import Documents from './components/Documents';
-import Tasks from './components/Tasks';
 import Settings from './components/Settings';
-import GastosPage from './components/GastosPage';
 import GlobalSearch from './components/GlobalSearch';
 import SalesPage from './components/SalesPage';
 import SessionNavBar from './components/SessionNavBar';
-import InternalChat from './components/InternalChat';
+
+const Tasks = React.lazy(() => import('./components/Tasks'));
+const GastosPage = React.lazy(() => import('./components/GastosPage'));
 
 import { Search, Bell, Check } from 'lucide-react';
 
@@ -24,7 +23,6 @@ function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const notifRef = useRef(null);
@@ -251,66 +249,6 @@ function App() {
     }
   }, []);
 
-  // 5. Listen to new chat messages for notifications & badge increment
-  useEffect(() => {
-    if (!isConfigured || !session) return;
-
-    let profilesMap = {};
-    supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .then(({ data }) => {
-        if (data) {
-          data.forEach(p => {
-            profilesMap[p.id] = p;
-          });
-        }
-      });
-
-    const channel = supabase
-      .channel('realtime-chat-notifications')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'internal_messages'
-        },
-        (payload) => {
-          const newMsg = payload.new;
-          if (newMsg.user_id !== session.user.id) {
-            setCurrentTab(prevTab => {
-              if (prevTab !== 'chat') {
-                setUnreadChatCount(prevCount => prevCount + 1);
-                
-                if ('Notification' in window && Notification.permission === 'granted') {
-                  const sender = profilesMap[newMsg.user_id];
-                  const senderName = sender?.full_name || sender?.email || 'Socio';
-                  
-                  new Notification('Nuevo mensaje en el Chat Interno', {
-                    body: `${senderName}: ${newMsg.message}`,
-                    icon: '/amazon-logo.png'
-                  });
-                }
-              }
-              return prevTab;
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [session]);
-
-  // 6. Reset unread count when switching to chat tab
-  useEffect(() => {
-    if (currentTab === 'chat') {
-      setUnreadChatCount(0);
-    }
-  }, [currentTab]);
   const handleSignOut = async () => {
     if (!isConfigured) return;
     if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
@@ -377,7 +315,6 @@ function App() {
         handleSignOut={handleSignOut} 
         theme={theme} 
         toggleTheme={toggleTheme} 
-        unreadChatCount={unreadChatCount}
       />
 
       {/* Main viewport */}
@@ -519,23 +456,28 @@ function App() {
 
         {/* Tab body content */}
         <div className="page-body">
-          {currentTab === 'dashboard' && <Dashboard onNavigate={(tab) => setCurrentTab(tab)} />}
-          {currentTab === 'products' && <Products />}
-          {currentTab === 'inventory' && <Inventory />}
-          {currentTab === 'batches' && <Batches />}
-          {currentTab === 'suppliers' && <Suppliers />}
-          {currentTab === 'orders' && <PurchaseOrders />}
-          {currentTab === 'documents' && <Documents />}
-          {currentTab === 'tasks' && <Tasks />}
-          {currentTab === 'sales' && <SalesPage />}
-          {currentTab === 'gastos' && <GastosPage />}
-          {currentTab === 'chat' && <InternalChat session={session} profile={profile} />}
-          {currentTab === 'settings' && (
-            <Settings 
-              profile={profile} 
-              onProfileUpdate={() => fetchUserProfile(session.user.id)} 
-            />
-          )}
+          <React.Suspense fallback={
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
+              <div style={{ width: '24px', height: '24px', border: '2px solid rgba(255,255,255,0.1)', borderRadius: '50%', borderTopColor: '#3b82f6', animation: 'spin 1s linear infinite', marginBottom: '8px' }}></div>
+              <div style={{ fontSize: '0.85rem' }}>Cargando módulo...</div>
+            </div>
+          }>
+            {currentTab === 'dashboard' && <Dashboard onNavigate={(tab) => setCurrentTab(tab)} />}
+            {currentTab === 'products' && <Products />}
+            {currentTab === 'inventory' && <Inventory />}
+            {currentTab === 'batches' && <Batches />}
+            {currentTab === 'suppliers' && <Suppliers />}
+            {currentTab === 'orders' && <PurchaseOrders />}
+            {currentTab === 'tasks' && <Tasks />}
+            {currentTab === 'sales' && <SalesPage />}
+            {currentTab === 'gastos' && <GastosPage />}
+            {currentTab === 'settings' && (
+              <Settings 
+                profile={profile} 
+                onProfileUpdate={() => fetchUserProfile(session.user.id)} 
+              />
+            )}
+          </React.Suspense>
         </div>
       </main>
 

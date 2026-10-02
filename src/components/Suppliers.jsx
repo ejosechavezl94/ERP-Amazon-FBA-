@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Plus, Edit2, Trash2, Search, X, Check, Globe, Mail, Phone, MapPin, ExternalLink, RefreshCw, Building, User, Link as LinkIcon } from 'lucide-react';
+import ConfirmDialog from './ui/ConfirmDialog';
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
@@ -18,6 +19,7 @@ export default function Suppliers() {
   const [website, setWebsite] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState(null);
+  const [supplierToDelete, setSupplierToDelete] = useState(null);
 
   const fetchSuppliers = async () => {
     setLoading(true);
@@ -102,8 +104,6 @@ export default function Suppliers() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este proveedor? Esto también desvinculará pedidos y lotes relacionados.')) return;
-
     try {
       const { error } = await supabase
         .from('suppliers')
@@ -161,10 +161,10 @@ export default function Suppliers() {
           <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
         </div>
       ) : filteredSuppliers.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <Globe size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-          <h3>No se encontraron proveedores</h3>
-          <p style={{ marginTop: '8px' }}>Registra un proveedor para asociarlo a tus pedidos de compra.</p>
+        <div className="card empty-state" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+          <Globe size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron proveedores</h3>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Registra un proveedor para asociarlo a tus pedidos de compra.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -277,6 +277,7 @@ export default function Suppliers() {
                   }} 
                   onClick={() => openEditModal(s)}
                   title="Editar proveedor"
+                  aria-label="Editar proveedor"
                 >
                   <Edit2 size={14} style={{ color: 'var(--text-secondary)' }} />
                 </button>
@@ -293,8 +294,9 @@ export default function Suppliers() {
                     width: '36px',
                     height: '36px'
                   }} 
-                  onClick={() => handleDelete(s.id)}
+                  onClick={() => setSupplierToDelete(s.id)}
                   title="Eliminar proveedor"
+                  aria-label="Eliminar proveedor"
                 >
                   <Trash2 size={14} style={{ color: 'var(--danger-color)' }} />
                 </button>
@@ -306,11 +308,11 @@ export default function Suppliers() {
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">{editingSupplier ? 'Editar Proveedor' : 'Añadir Nuevo Proveedor'}</h3>
-              <button className="action-btn" onClick={() => setIsModalOpen(false)}><X size={18} /></button>
+              <button className="action-btn" onClick={() => setIsModalOpen(false)} aria-label="Cerrar modal"><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -410,6 +412,15 @@ export default function Suppliers() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog 
+        isOpen={!!supplierToDelete}
+        onClose={() => setSupplierToDelete(null)}
+        onConfirm={() => handleDelete(supplierToDelete)}
+        title="Eliminar Proveedor"
+        description="¿Estás seguro de que quieres eliminar este proveedor? Esto también desvinculará pedidos y lotes relacionados."
+        confirmText="Eliminar"
+      />
     </div>
   );
 }

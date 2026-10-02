@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { Plus, Download, Trash2, ShoppingBag, ArrowUpRight, DollarSign } from "lucide-react";
 import { Calendar, MonthPicker } from "./ui/Calendar";
+import ConfirmDialog from "./ui/ConfirmDialog";
 
 const fmt = (n) =>
   Number(n).toLocaleString("es-ES", {
@@ -23,6 +24,7 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formS, setFormS] = useState(EMPTY_SALE);
+  const [saleToDelete, setSaleToDelete] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -120,8 +122,6 @@ export default function SalesPage() {
   }
 
   async function handleDeleteSale(id) {
-    if (!window.confirm("¿Estás seguro de que quieres eliminar este registro de venta?")) return;
-
     try {
       const { error: err } = await supabase
         .from("sales")
@@ -199,7 +199,11 @@ export default function SalesPage() {
       {loading ? (
         <p className="g-loading">Cargando ventas...</p>
       ) : sales.length === 0 ? (
-        <div className="g-empty">No hay ventas registradas en este periodo.</div>
+        <div className="card empty-state" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+          <ShoppingBag size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron ventas</h3>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No hay ventas registradas en este periodo.</p>
+        </div>
       ) : (
         <table className="g-table">
           <thead>
@@ -237,7 +241,7 @@ export default function SalesPage() {
                 <td style={{ textAlign: "right", fontWeight: 600 }}>{fmt(s.quantity * (s.products?.target_price || 0))}</td>
                 <td className="g-muted">{s.notes || "—"}</td>
                 <td>
-                  <button className="g-icon-btn" onClick={() => handleDeleteSale(s.id)} aria-label="Eliminar venta">
+                  <button className="g-icon-btn" onClick={() => setSaleToDelete(s.id)} aria-label="Eliminar venta">
                     <Trash2 size={14} />
                   </button>
                 </td>
@@ -259,92 +263,83 @@ export default function SalesPage() {
               <label>Producto *</label>
               <select 
                 value={formS.productId} 
-                onChange={e => setFormS({ ...formS, productId: e.target.value })}
-                required
+                onChange={e => setFormS(prev => ({ ...prev, productId: e.target.value }))}
               >
                 <option value="">Selecciona un producto...</option>
                 {products.map(p => (
-                  <option key={p.id} value={p.id}>[{p.sku_internal}] {p.name}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.sku_internal})
+                  </option>
                 ))}
               </select>
             </div>
 
-            <div className="g-grid2">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div className="g-field">
                 <label>Cantidad *</label>
                 <input 
                   type="number" 
                   min="1" 
                   value={formS.quantity} 
-                  onChange={e => setFormS({ ...formS, quantity: e.target.value })}
-                  required
+                  onChange={e => setFormS(prev => ({ ...prev, quantity: parseInt(e.target.value) || 0 }))} 
                 />
               </div>
-
               <div className="g-field" style={{ position: "relative" }}>
                 <label>Fecha *</label>
                 <input 
                   type="text" 
                   value={formS.date} 
                   readOnly 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowCalendar(!showCalendar);
-                  }}
+                  onClick={() => setShowCalendar(!showCalendar)}
                   style={{ cursor: "pointer" }}
-                  required
                 />
                 {showCalendar && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 120, marginTop: "4px" }}>
-                    <div style={{ position: "fixed", inset: 0, zIndex: 119 }} onClick={(e) => {
-                      e.stopPropagation();
-                      setShowCalendar(false);
-                    }} />
-                    <div style={{ position: "relative", zIndex: 120 }}>
-                      <Calendar 
-                        selected={formS.date} 
-                        onSelect={(date) => {
-                          setFormS({ ...formS, date });
-                          setShowCalendar(false);
-                        }} 
-                      />
-                    </div>
+                  <div style={{ position: "absolute", zIndex: 10, top: "100%", left: 0, backgroundColor: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                    <Calendar 
+                      selectedDate={formS.date} 
+                      onSelectDate={d => {
+                        setFormS(prev => ({ ...prev, date: d }));
+                        setShowCalendar(false);
+                      }} 
+                    />
                   </div>
                 )}
               </div>
             </div>
 
             <div className="g-field">
-              <label>Almacén *</label>
-              <select
-                value={formS.warehouseType}
-                onChange={e => setFormS({ ...formS, warehouseType: e.target.value })}
-                required
-              >
-                <option value="LOCAL">LOCAL</option>
-                <option value="FBA">FBA (Amazon)</option>
-              </select>
-            </div>
-
-            <div className="g-field">
-              <label>Notas (opcional)</label>
-              <input 
-                type="text" 
-                placeholder="Canal de venta, detalles..." 
+              <label>Notas / Canal de venta</label>
+              <textarea 
+                placeholder="Ej. Venta física en tienda, pedido web" 
                 value={formS.notes} 
-                onChange={e => setFormS({ ...formS, notes: e.target.value })}
+                onChange={e => setFormS(prev => ({ ...prev, notes: e.target.value }))} 
               />
             </div>
 
-            <div className="g-modal-footer">
-              <button className="g-btn-sec" onClick={() => setIsModalOpen(false)}>Cancelar</button>
-              <button className="g-btn-primary" onClick={handleRegisterSale} disabled={saving}>
-                {saving ? "Registrando..." : "Registrar"}
+            <div className="g-modal-foot">
+              <button className="g-btn g-btn-sec" onClick={() => { setIsModalOpen(false); setFormS(EMPTY_SALE); setShowCalendar(false); }}>
+                Cancelar
+              </button>
+              <button 
+                className="g-btn g-btn-pri" 
+                onClick={handleRegisterSale}
+                disabled={saving || !formS.productId || formS.quantity <= 0}
+              >
+                {saving ? "Guardando..." : "Guardar Venta"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <ConfirmDialog 
+        isOpen={!!saleToDelete}
+        onClose={() => setSaleToDelete(null)}
+        onConfirm={() => handleDeleteSale(saleToDelete)}
+        title="Eliminar Venta"
+        description="¿Estás seguro de que quieres eliminar este registro de venta? Esto revertirá de forma automática el stock correspondiente del inventario."
+        confirmText="Eliminar"
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   LayoutDashboard, Package, TrendingUp, Users, ShoppingCart, 
   FileText, CheckSquare, Settings as SettingsIcon, LogOut, Sun, Moon, 
-  ChevronsUpDown, Plus, Layers, Wallet, DollarSign, MessageSquare
+  ChevronsUpDown, Plus, Layers, Wallet, DollarSign
 } from 'lucide-react';
 
 export default function SessionNavBar({ 
@@ -12,8 +12,7 @@ export default function SessionNavBar({
   profile, 
   handleSignOut, 
   theme, 
-  toggleTheme,
-  unreadChatCount = 0
+  toggleTheme
 }) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
@@ -46,10 +45,8 @@ export default function SessionNavBar({
     { id: 'suppliers', label: 'Proveedores', icon: Users },
     { id: 'orders', label: 'Pedidos PO', icon: ShoppingCart },
     { id: 'sales', label: 'Ventas', icon: DollarSign },
-    { id: 'documents', label: 'Documentos', icon: FileText },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
     { id: 'gastos', label: 'Gastos', icon: Wallet },
-    { id: 'chat', label: 'Chat Interno', icon: MessageSquare },
   ];
 
   return (
@@ -142,36 +139,10 @@ export default function SessionNavBar({
             >
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={18} style={{ flexShrink: 0 }} />
-                {item.id === 'chat' && unreadChatCount > 0 && isCollapsed && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '-6px',
-                    right: '-6px',
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(239, 68, 68, 1)',
-                    boxShadow: '0 0 0 2px var(--bg-secondary)'
-                  }}></span>
-                )}
               </div>
               <span className="sidebar-text-container" style={{ display: isCollapsed ? 'none' : 'inline', fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
                 {item.label}
               </span>
-              {item.id === 'chat' && unreadChatCount > 0 && !isCollapsed && (
-                <span style={{
-                  marginLeft: 'auto',
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                  color: '#ef4444',
-                  borderRadius: '9999px',
-                  padding: '1px 6px',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  lineHeight: 1
-                }}>
-                  {unreadChatCount}
-                </span>
-              )}
             </button>
           );
         })}

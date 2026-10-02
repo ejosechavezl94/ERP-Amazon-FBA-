@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Plus, Edit2, Trash2, Search, X, Check, RefreshCw, 
-  Layers, Package, Users, ShoppingCart, FileText, Calendar, Info 
+  Layers, Package, Users, ShoppingCart, Calendar, Info 
 } from 'lucide-react';
 
 export default function Batches() {
@@ -10,7 +10,6 @@ export default function Batches() {
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -55,12 +54,10 @@ export default function Batches() {
       const { data: pData } = await supabase.from('products').select('id, name, sku_internal');
       const { data: supData } = await supabase.from('suppliers').select('id, company_name');
       const { data: ordData } = await supabase.from('purchase_orders').select('id, order_number');
-      const { data: docData } = await supabase.from('documents').select('id, name, file_path, file_type, category, batch_id');
 
       setProducts(pData || []);
       setSuppliers(supData || []);
       setOrders(ordData || []);
-      setDocuments(docData || []);
 
       // Calculate sold units per batch using FIFO logic
       if (bData && sData) {
@@ -260,14 +257,12 @@ export default function Batches() {
                 <th>Unidades (Ini / Vend / Rest)</th>
                 <th>Fechas (Fab / Venc)</th>
                 <th>Costo Unit. / Total</th>
-                <th>Documentos</th>
                 <th>Estado</th>
                 <th style={{ textAlign: 'right' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredBatches.map(b => {
-                const batchDocs = documents.filter(d => d.batch_id === b.id);
                 return (
                   <tr key={b.id}>
                     <td>
@@ -326,20 +321,6 @@ export default function Batches() {
                         <span>{formatCurrency(b.cost_unit)}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Total: {formatCurrency(b.cost_total || (b.quantity * b.cost_unit))}</span>
                       </div>
-                    </td>
-                    <td>
-                      {batchDocs.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          {batchDocs.map(doc => (
-                            <span key={doc.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--accent-color)' }} title={doc.name}>
-                              <FileText size={10} />
-                              <span style={{ maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.75rem', fontStyle: 'italic' }}>Ninguno</span>
-                      )}
                     </td>
                     <td>
                       <span className={`badge ${

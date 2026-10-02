@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw } from 'lucide-react';
+import ConfirmDialog from './ui/ConfirmDialog';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -18,6 +19,7 @@ export default function Products() {
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
   const [status, setStatus] = useState('Active');
+  const [productToDelete, setProductToDelete] = useState(null);
   const [costAmazon, setCostAmazon] = useState(0);
   const [targetPrice, setTargetPrice] = useState(0);
   const [notes, setNotes] = useState('');
@@ -117,8 +119,6 @@ export default function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar este producto? Esto también eliminará su registro de inventario.')) return;
-
     try {
       const { error } = await supabase
         .from('products')
@@ -201,10 +201,10 @@ export default function Products() {
           <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <Package size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-          <h3>No se encontraron productos</h3>
-          <p style={{ marginTop: '8px' }}>Empieza por añadir un nuevo producto al catálogo.</p>
+        <div className="card empty-state" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+          <Package size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron productos</h3>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Empieza por añadir un nuevo producto al catálogo.</p>
         </div>
       ) : (
         <div className="table-container">
@@ -242,10 +242,10 @@ export default function Products() {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-flex', gap: '8px' }}>
-                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(p)}>
+                      <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(p)} aria-label="Editar producto">
                         <Edit2 size={14} />
                       </button>
-                      <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => handleDelete(p.id)}>
+                      <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => setProductToDelete(p.id)} aria-label="Eliminar producto">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -259,11 +259,11 @@ export default function Products() {
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">{editingProduct ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h3>
-              <button className="action-btn" onClick={() => setIsModalOpen(false)}><X size={18} /></button>
+              <button className="action-btn" onClick={() => setIsModalOpen(false)} aria-label="Cerrar modal"><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -381,6 +381,15 @@ export default function Products() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog 
+        isOpen={!!productToDelete}
+        onClose={() => setProductToDelete(null)}
+        onConfirm={() => handleDelete(productToDelete)}
+        title="Eliminar Producto"
+        description="¿Estás seguro de que quieres eliminar este producto? Esto también eliminará su registro de inventario."
+        confirmText="Eliminar"
+      />
     </div>
   );
 }
