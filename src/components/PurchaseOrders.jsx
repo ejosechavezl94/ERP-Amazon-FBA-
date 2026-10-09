@@ -295,121 +295,146 @@ export default function PurchaseOrders() {
   };
 
   return (
-    <div>
-      <div className="page-header">
+    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <h1 className="page-title">Pedidos de Compra</h1>
-          <p className="page-subtitle">Gestiona la cadena de suministro, control de aduanas e ingresos de stock</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 600, 
+              color: 'var(--accent-color)', 
+              letterSpacing: '0.05em', 
+              textTransform: 'uppercase' 
+            }}>Gestión de Cadena de Suministro</span>
+          </div>
+          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Pedidos de Compra (PO)</h1>
+          <p className="page-subtitle">Gestiona la producción con proveedores, tránsito aduanero e ingresos de stock</p>
         </div>
-        <button className="btn btn-primary" onClick={openAddModal}>
+        <button className="btn btn-primary" onClick={openAddModal} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
           <Plus size={16} /> Crear Pedido (PO)
         </button>
       </div>
 
       {/* Search and Filters */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ position: 'relative', width: '320px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-tertiary)' }} />
+      <div style={{ 
+        display: 'flex', 
+        gap: '16px', 
+        marginBottom: '24px', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        background: 'var(--surface-color)',
+        padding: '16px 20px',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        <div style={{ position: 'relative', width: '340px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Buscar por PO, SKU, producto..." 
+            placeholder="Buscar por Nº de PO, proveedor, SKU..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '36px' }}
+            style={{ paddingLeft: '40px', borderRadius: '10px' }}
           />
         </div>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          Mostrando {filteredPOs.length} pedidos
+        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+          {filteredPOs.length} {filteredPOs.length === 1 ? 'pedido registrado' : 'pedidos registrados'}
         </div>
       </div>
 
       {/* POs List */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-          <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+          <RefreshCw className="animate-spin" size={28} style={{ color: 'var(--accent-color)' }} />
         </div>
       ) : filteredPOs.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <ShoppingCart size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
-          <h3>No se encontraron pedidos de compra</h3>
-          <p style={{ marginTop: '8px', fontSize: '0.875rem' }}>Crea un nuevo pedido de compra para empezar a registrar mercancía.</p>
+        <div className="card" style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)', borderRadius: '16px' }}>
+          <ShoppingCart size={48} style={{ margin: '0 auto 16px', opacity: 0.4, color: 'var(--accent-color)' }} />
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron pedidos de compra</h3>
+          <p style={{ margin: 0, fontSize: '0.875rem' }}>Crea un nuevo pedido para empezar a registrar mercancía en tránsito.</p>
         </div>
       ) : (
-        <div className="table-container">
-          <table className="table">
+        <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+          <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
-              <tr>
-                <th>Nº Pedido</th>
-                <th>Variantes / SKU</th>
-                <th>Proveedor</th>
-                <th>Unidades Totales</th>
-                <th>Costo Total</th>
-                <th>Fecha Pedido</th>
-                <th>Llegada Estimada</th>
-                <th>Estado</th>
-                <th style={{ textAlign: 'right' }}>Acciones</th>
+              <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Nº Pedido</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Productos / SKU</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Proveedor</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Unidades</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Costo Total</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Fecha Pedido</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Llegada Est.</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Estado</th>
+                <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredPOs.map(po => {
                 const totalUnits = po.items && Array.isArray(po.items)
-                  ? po.items.reduce((sum, l) => sum + l.quantity, 0)
+                  ? po.items.reduce((sum, l) => sum + Number(l.quantity || 0), 0)
                   : po.quantity;
                 return (
-                  <tr key={po.id}>
-                    <td style={{ fontWeight: 600 }}>
+                  <tr key={po.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s ease' }}>
+                    <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <span>PO-{po.order_number}</span>
-                        <span className={`badge ${po.warehouse_type === 'FBA' ? 'badge-primary' : 'badge-neutral'}`} style={{ 
+                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                          PO-{po.order_number}
+                        </span>
+                        <span style={{ 
                           fontSize: '0.65rem', 
-                          padding: '1px 5px', 
+                          padding: '2px 6px', 
+                          borderRadius: '10px',
                           width: 'fit-content',
                           textTransform: 'uppercase',
-                          fontWeight: 'bold'
+                          fontWeight: 700,
+                          background: po.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
+                          color: po.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)'
                         }}>
                           {po.warehouse_type || 'LOCAL'}
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td style={{ padding: '14px 16px' }}>
                       {po.items && Array.isArray(po.items) && po.items.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {po.items.map((line, idx) => {
                             const prod = products.find(p => p.id === line.productId);
                             return (
                               <span key={idx} style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
-                                <strong style={{ fontFamily: 'var(--font-mono)' }}>[{prod?.sku_internal || 'N/A'}]</strong> {prod?.name || 'Desconocido'} ({line.quantity} uds)
+                                <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-color)' }}>[{prod?.sku_internal || 'N/A'}]</strong> {prod?.name || 'Desconocido'} ({line.quantity} uds)
                               </span>
                             );
                           })}
                         </div>
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span>{po.products?.name}</span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>SKU: {po.products?.sku_internal}</span>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>{po.products?.name}</span>
+                          <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>SKU: {po.products?.sku_internal}</span>
                         </div>
                       )}
                     </td>
-                    <td>{po.suppliers?.company_name}</td>
-                    <td>{totalUnits} uds</td>
-                    <td style={{ fontWeight: 600 }}>{formatCurrency(po.total_cost)}</td>
-                    <td>{po.order_date}</td>
-                    <td>{po.estimated_arrival || <span style={{ color: 'var(--text-tertiary)' }}>Sin definir</span>}</td>
-                    <td>
+                    <td style={{ padding: '14px 16px', fontWeight: 500, color: 'var(--text-primary)' }}>{po.suppliers?.company_name}</td>
+                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{totalUnits} uds</td>
+                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{formatCurrency(po.total_cost)}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{po.order_date}</td>
+                    <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{po.estimated_arrival || <span style={{ color: 'var(--text-tertiary)' }}>Sin definir</span>}</td>
+                    <td style={{ padding: '14px 16px' }}>
                       <select 
                         className="form-select" 
                         value={po.status} 
                         onChange={(e) => handleUpdateStatus(po, e.target.value)}
                         style={{ 
-                          padding: '3px 8px', 
+                          padding: '4px 10px', 
                           fontSize: '0.8rem', 
-                          width: '130px', 
-                          fontWeight: 500,
-                          borderRadius: '4px',
+                          fontWeight: 600,
+                          borderRadius: '8px',
                           border: '1px solid var(--border-color)',
-                          backgroundColor: po.status === 'Recibido' || po.status === 'Cerrado' ? 'var(--success-light)' : 'var(--bg-secondary)',
-                          color: po.status === 'Recibido' || po.status === 'Cerrado' ? 'var(--success-color)' : 'var(--text-primary)',
+                          backgroundColor: po.status === 'Recibido' || po.status === 'Cerrado' ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface-color)',
+                          color: po.status === 'Recibido' || po.status === 'Cerrado' ? '#10b981' : 'var(--text-primary)',
+                          cursor: 'pointer'
                         }}
                       >
                         <option value="Pendiente">Pendiente</option>
@@ -421,13 +446,13 @@ export default function PurchaseOrders() {
                         <option value="Cerrado">Cerrado</option>
                       </select>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(po)}>
+                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(po)} style={{ borderRadius: '8px' }}>
                           <Edit2 size={13} />
                         </button>
-                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handleDelete(po.id)}>
-                          <Trash2 size={13} style={{ color: 'var(--danger-color)' }} />
+                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => handleDelete(po.id)} style={{ borderRadius: '8px' }}>
+                          <Trash2 size={13} style={{ color: '#ef4444' }} />
                         </button>
                       </div>
                     </td>

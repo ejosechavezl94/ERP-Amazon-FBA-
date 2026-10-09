@@ -126,48 +126,68 @@ export default function Suppliers() {
   });
 
   return (
-    <div>
-      <div className="page-header">
+    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <h1 className="page-title">Proveedores</h1>
-          <p className="page-subtitle">Gestiona tu directorio de fabricantes e intermediarios de importación</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 600, 
+              color: 'var(--accent-color)', 
+              letterSpacing: '0.05em', 
+              textTransform: 'uppercase' 
+            }}>Directorio de Fabricación</span>
+          </div>
+          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Proveedores & Fabricantes</h1>
+          <p className="page-subtitle">Gestiona tu directorio de fabricantes e intermediarios de importación FBA</p>
         </div>
-        <button className="btn btn-primary" onClick={openAddModal}>
+        <button className="btn btn-primary" onClick={openAddModal} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
           <Plus size={16} /> Añadir Proveedor
         </button>
       </div>
 
       {/* Search bar */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ position: 'relative', width: '300px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-tertiary)' }} />
+      <div style={{ 
+        display: 'flex', 
+        gap: '16px', 
+        marginBottom: '24px', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        background: 'var(--surface-color)',
+        padding: '16px 20px',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        <div style={{ position: 'relative', width: '320px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Buscar por empresa, contacto, email..." 
+            placeholder="Buscar por empresa, contacto, país o email..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '36px' }}
+            style={{ paddingLeft: '40px', borderRadius: '10px' }}
           />
         </div>
-        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-          Mostrando {filteredSuppliers.length} proveedores
+        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+          {filteredSuppliers.length} {filteredSuppliers.length === 1 ? 'proveedor registrado' : 'proveedores registrados'}
         </div>
       </div>
 
-      {/* Grid view of suppliers (Linear/ClickUp style) */}
+      {/* Grid view of suppliers (Linear style) */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-          <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+          <RefreshCw className="animate-spin" size={28} style={{ color: 'var(--accent-color)' }} />
         </div>
       ) : filteredSuppliers.length === 0 ? (
-        <div className="card empty-state" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <Globe size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
+        <div className="card empty-state" style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)', borderRadius: '16px' }}>
+          <Globe size={48} style={{ margin: '0 auto 16px', opacity: 0.4, color: 'var(--accent-color)' }} />
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron proveedores</h3>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Registra un proveedor para asociarlo a tus pedidos de compra.</p>
+          <p style={{ margin: 0, fontSize: '0.875rem' }}>Registra un proveedor para asociarlo a tus pedidos de compra (PO).</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {filteredSuppliers.map(s => (
             <div 
               key={s.id} 
@@ -176,28 +196,29 @@ export default function Suppliers() {
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'space-between', 
-                padding: '20px 24px', 
+                padding: '18px 24px', 
                 gap: '20px',
                 borderRadius: '16px',
                 border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--bg-primary)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
+                backgroundColor: 'var(--surface-color)',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'all 0.15s ease'
               }}
             >
               {/* Left section: Building Icon and Text content */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
                 {/* Building Icon Container */}
                 <div 
                   style={{ 
-                    width: '48px', 
-                    height: '48px', 
+                    width: '44px', 
+                    height: '44px', 
                     borderRadius: '12px', 
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)', 
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center',
                     color: 'var(--accent-color)',
-                    border: '1px solid rgba(59, 130, 246, 0.15)',
+                    border: '1px solid rgba(245, 158, 11, 0.2)',
                     flexShrink: 0
                   }}
                 >
@@ -205,9 +226,9 @@ export default function Suppliers() {
                 </div>
 
                 {/* Text information */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: 1 }}>
                   {/* Company Name */}
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {s.company_name}
                   </h3>
 

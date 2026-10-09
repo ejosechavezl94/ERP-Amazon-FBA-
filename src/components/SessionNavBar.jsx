@@ -37,16 +37,42 @@ export default function SessionNavBar({
     return session?.user?.email?.slice(0, 2).toUpperCase() || 'U';
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'products', label: 'Productos', icon: Package },
-    { id: 'inventory', label: 'Inventario', icon: TrendingUp },
-    { id: 'batches', label: 'Lotes', icon: Layers },
-    { id: 'suppliers', label: 'Proveedores', icon: Users },
-    { id: 'orders', label: 'Pedidos PO', icon: ShoppingCart },
-    { id: 'sales', label: 'Ventas', icon: DollarSign },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare },
-    { id: 'gastos', label: 'Gastos', icon: Wallet },
+  // Grouped navigation per e-commerce operational workflow
+  const menuGroups = [
+    {
+      title: 'RESUMEN',
+      items: [
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard }
+      ]
+    },
+    {
+      title: 'CATÁLOGO E INVENTARIO',
+      items: [
+        { id: 'products', label: 'Productos', icon: Package },
+        { id: 'inventory', label: 'Inventario', icon: TrendingUp },
+        { id: 'batches', label: 'Lotes de Producción', icon: Layers }
+      ]
+    },
+    {
+      title: 'COMPRAS Y PROVEEDORES',
+      items: [
+        { id: 'suppliers', label: 'Proveedores', icon: Users },
+        { id: 'orders', label: 'Pedidos PO', icon: ShoppingCart }
+      ]
+    },
+    {
+      title: 'FINANZAS Y VENTAS',
+      items: [
+        { id: 'sales', label: 'Ventas', icon: DollarSign },
+        { id: 'gastos', label: 'Gastos', icon: Wallet }
+      ]
+    },
+    {
+      title: 'GESTIÓN',
+      items: [
+        { id: 'tasks', label: 'Tareas', icon: CheckSquare }
+      ]
+    }
   ];
 
   return (
@@ -78,16 +104,16 @@ export default function SessionNavBar({
           }}
         >
           <div style={{ 
-            width: '28px', 
-            height: '28px', 
-            borderRadius: '6px', 
+            width: '30px', 
+            height: '30px', 
+            borderRadius: '8px', 
             backgroundColor: '#ffffff', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
             flexShrink: 0,
             overflow: 'hidden',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
             border: '1px solid var(--border-color)'
           }}>
             <img 
@@ -102,50 +128,71 @@ export default function SessionNavBar({
             />
           </div>
           
-          <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: isCollapsed ? 'none' : 'flex', alignItems: 'center' }}>
-            <span style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              EPR FBA Portal
+          <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: isCollapsed ? 'none' : 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Amazon FBA ERP
+            </span>
+            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-color)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Console v2.0
             </span>
           </div>
         </div>
       </div>
 
-      {/* Sidebar Menu Items */}
-      <nav className="sidebar-menu" style={{ padding: '16px 8px', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-        {menuItems.map(item => {
-          const Icon = item.icon;
-          const isActive = currentTab === item.id;
-          return (
-            <button 
-              key={item.id}
-              className={`menu-item ${isActive ? 'active' : ''}`}
-              onClick={() => setCurrentTab(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '10px 12px',
-                width: '100%',
-                border: 'none',
-                background: 'none',
-                textAlign: 'left',
-                cursor: 'pointer',
-                borderRadius: 'var(--border-radius)',
-                color: isActive ? 'var(--accent-color)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--accent-light)' : 'transparent',
-                transition: 'all 0.15s ease',
-                position: 'relative'
-              }}
-            >
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={18} style={{ flexShrink: 0 }} />
-              </div>
-              <span className="sidebar-text-container" style={{ display: isCollapsed ? 'none' : 'inline', fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                {item.label}
+      {/* Sidebar Menu Items Grouped */}
+      <nav className="sidebar-menu" style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, overflowY: 'auto' }}>
+        {menuGroups.map((group, idx) => (
+          <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            {!isCollapsed && (
+              <span style={{ 
+                fontSize: '0.62rem', 
+                fontWeight: 700, 
+                color: 'var(--text-tertiary)', 
+                letterSpacing: '0.08em', 
+                padding: '4px 10px 2px 10px', 
+                textTransform: 'uppercase' 
+              }}>
+                {group.title}
               </span>
-            </button>
-          );
-        })}
+            )}
+            {group.items.map(item => {
+              const Icon = item.icon;
+              const isActive = currentTab === item.id;
+              return (
+                <button 
+                  key={item.id}
+                  className={`menu-item ${isActive ? 'active' : ''}`}
+                  onClick={() => setCurrentTab(item.id)}
+                  title={isCollapsed ? item.label : undefined}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '8px 10px',
+                    width: '100%',
+                    border: 'none',
+                    background: 'none',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    borderRadius: 'var(--border-radius-sm)',
+                    color: isActive ? 'var(--accent-color)' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'var(--accent-light)' : 'transparent',
+                    boxShadow: isActive ? 'inset 3px 0 0 var(--accent-color)' : 'none',
+                    transition: 'all 0.15s ease',
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={17} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.8 }} />
+                  </div>
+                  <span className="sidebar-text-container" style={{ display: isCollapsed ? 'none' : 'inline', fontSize: '0.86rem', fontWeight: isActive ? 600 : 500, whiteSpace: 'nowrap' }}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Sidebar Footer */}

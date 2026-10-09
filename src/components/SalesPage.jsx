@@ -147,108 +147,141 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="gastos-wrap" style={{ maxWidth: "1200px" }}>
+    <div className="gastos-wrap" style={{ maxWidth: "1200px", animation: 'fadeIn 0.2s ease-out' }}>
       {/* Header */}
-      <div className="gastos-header">
+      <div className="gastos-header" style={{ marginBottom: '24px' }}>
         <div>
-          <h2 className="gastos-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 600, 
+              color: 'var(--accent-color)', 
+              letterSpacing: '0.05em', 
+              textTransform: 'uppercase' 
+            }}>Registro Comercial & ROI</span>
+          </div>
+          <h2 className="gastos-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em', display: "flex", alignItems: "center", gap: "10px" }}>
             <ShoppingBag size={22} style={{ color: "var(--accent-color)" }} />
             Historial de Ventas
           </h2>
-          <p className="gastos-sub">Transacciones registradas manualmente y canales externos</p>
+          <p className="gastos-sub">Transacciones comerciales registradas en canales Amazon FBA y locales</p>
         </div>
         <div className="gastos-header-actions">
           <MonthPicker value={mes} onChange={setMes} />
-          <button className="g-btn-sec" onClick={exportCSV}>
+          <button className="g-btn-sec" onClick={exportCSV} style={{ borderRadius: '10px' }}>
             <Download size={14} /> Exportar CSV
           </button>
         </div>
       </div>
 
       {/* Metrics */}
-      <div className="gastos-metrics">
-        <div className="gmetric">
-          <span className="gmetric-label">Ingresos del mes</span>
-          <span className="gmetric-value" style={{ color: "#10b981" }}>{fmt(totalRevenue)}</span>
+      <div className="gastos-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Ingresos del Mes</span>
+          <span className="gmetric-value" style={{ color: "#10b981", fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 700 }}>{fmt(totalRevenue)}</span>
         </div>
-        <div className="gmetric">
-          <span className="gmetric-label">Unidades vendidas</span>
-          <span className="gmetric-value">{totalUnits} uds</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Unidades Vendidas</span>
+          <span className="gmetric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 700 }}>{totalUnits} uds</span>
         </div>
-        <div className="gmetric">
-          <span className="gmetric-label">Margen estimado</span>
-          <span className="gmetric-value">{fmt(totalProfit)}</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Margen Bruto Est.</span>
+          <span className="gmetric-value" style={{ color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 700 }}>{fmt(totalProfit)}</span>
         </div>
-        <div className="gmetric">
-          <span className="gmetric-label">Ticket medio</span>
-          <span className="gmetric-value">{fmt(averageTicket)}</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Ticket Medio</span>
+          <span className="gmetric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.5rem', fontWeight: 700 }}>{fmt(averageTicket)}</span>
         </div>
       </div>
 
       {/* Action Header */}
-      <div className="g-section-header">
-        <p className="g-section-hint">
-          Ventas del mes de <strong>{mes}</strong>. Estas ventas reducen automáticamente el inventario disponible.
+      <div className="g-section-header" style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        background: 'var(--surface-color)',
+        padding: '16px 20px',
+        borderRadius: '16px',
+        border: '1px solid var(--border-color)',
+        marginBottom: '24px'
+      }}>
+        <p className="g-section-hint" style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+          Ventas acumuladas en <strong>{mes}</strong>. El inventario se descuenta en tiempo real.
         </p>
-        <button className="g-btn-primary" onClick={() => { setError(""); setShowCalendar(false); setIsModalOpen(true); }}>
+        <button className="g-btn-primary" onClick={() => { setError(""); setShowCalendar(false); setIsModalOpen(true); }} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
           <Plus size={14} /> Registrar Venta
         </button>
       </div>
 
       {/* Sales Table */}
       {loading ? (
-        <p className="g-loading">Cargando ventas...</p>
+        <p className="g-loading" style={{ textAlign: 'center', padding: '40px' }}>Cargando ventas...</p>
       ) : sales.length === 0 ? (
-        <div className="card empty-state" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          <ShoppingBag size={48} style={{ margin: '0 auto 16px', opacity: 0.5, color: 'var(--text-tertiary)' }} />
+        <div className="card empty-state" style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)', borderRadius: '16px' }}>
+          <ShoppingBag size={48} style={{ margin: '0 auto 16px', opacity: 0.4, color: 'var(--accent-color)' }} />
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron ventas</h3>
-          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No hay ventas registradas en este periodo.</p>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No hay transacciones registradas en este periodo.</p>
         </div>
       ) : (
-        <table className="g-table">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>SKU</th>
-              <th>Producto</th>
-              <th style={{ textAlign: "right" }}>Cantidad</th>
-              <th style={{ textAlign: "right" }}>Precio Unitario</th>
-              <th style={{ textAlign: "right" }}>Total</th>
-              <th>Notas</th>
-              <th style={{ width: "50px" }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.map((s) => (
-              <tr key={s.id}>
-                <td className="g-muted">{s.sale_date}</td>
-                <td style={{ fontWeight: 600 }}>{s.products?.sku_internal}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>{s.products?.name}</span>
-                    <span className={`badge ${s.warehouse_type === 'FBA' ? 'badge-primary' : 'badge-neutral'}`} style={{ 
-                      fontSize: '0.65rem', 
-                      padding: '1px 5px', 
-                      textTransform: 'uppercase',
-                      fontWeight: 'bold'
-                    }}>
-                      {s.warehouse_type || 'LOCAL'}
-                    </span>
-                  </div>
-                </td>
-                <td style={{ textAlign: "right" }}>{s.quantity}</td>
-                <td style={{ textAlign: "right" }}>{fmt(s.products?.target_price || 0)}</td>
-                <td style={{ textAlign: "right", fontWeight: 600 }}>{fmt(s.quantity * (s.products?.target_price || 0))}</td>
-                <td className="g-muted">{s.notes || "—"}</td>
-                <td>
-                  <button className="g-icon-btn" onClick={() => setSaleToDelete(s.id)} aria-label="Eliminar venta">
-                    <Trash2 size={14} />
-                  </button>
-                </td>
+        <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+          <table className="g-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+            <thead>
+              <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Fecha</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Almacén</th>
+                <th style={{ padding: '14px 16px', textAlign: "right", fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Cantidad</th>
+                <th style={{ padding: '14px 16px', textAlign: "right", fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Precio Unit.</th>
+                <th style={{ padding: '14px 16px', textAlign: "right", fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Total Ingreso</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Notas</th>
+                <th style={{ width: "50px", padding: '14px 16px' }}></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sales.map((s) => (
+                <tr key={s.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s ease' }}>
+                  <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s.sale_date}</td>
+                  <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.85rem' }}>
+                    <span style={{ 
+                      background: 'rgba(245, 158, 11, 0.08)', 
+                      color: 'var(--text-primary)', 
+                      padding: '4px 8px', 
+                      borderRadius: '6px',
+                      border: '1px solid rgba(245, 158, 11, 0.2)'
+                    }}>
+                      {s.products?.sku_internal}
+                    </span>
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{s.products?.name}</span>
+                      <span style={{ 
+                        fontSize: '0.65rem', 
+                        padding: '2px 8px', 
+                        borderRadius: '10px',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        background: s.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
+                        color: s.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)'
+                      }}>
+                        {s.warehouse_type || 'LOCAL'}
+                      </span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '14px 16px', textAlign: "right", fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{s.quantity}</td>
+                  <td style={{ padding: '14px 16px', textAlign: "right", fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{fmt(s.products?.target_price || 0)}</td>
+                  <td style={{ padding: '14px 16px', textAlign: "right", fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#10b981' }}>{fmt(s.quantity * (s.products?.target_price || 0))}</td>
+                  <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s.notes || "—"}</td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <button className="g-icon-btn" onClick={() => setSaleToDelete(s.id)} aria-label="Eliminar venta" style={{ borderRadius: '8px' }}>
+                      <Trash2 size={14} style={{ color: '#ef4444' }} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {/* Register Sale Modal */}

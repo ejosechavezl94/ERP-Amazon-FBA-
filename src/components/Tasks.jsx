@@ -230,145 +230,180 @@ export default function Tasks() {
   };
 
   return (
-    <div>
-      <div className="page-header">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      {/* Executive Kanban Header */}
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: 0 }}>
         <div>
-          <h1 className="page-title">Tablero Kanban</h1>
-          <p className="page-subtitle">Rastrea la operativa diaria de compras, producción e importación</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+            <h1 className="page-title" style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Gestión Operativa FBA</h1>
+            <span className="badge badge-warning" style={{ fontSize: '0.68rem', padding: '3px 8px', letterSpacing: '0.05em', fontWeight: 700 }}>TABLERO KANBAN</span>
+          </div>
+          <p className="page-subtitle" style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+            Rastrea en tiempo real el progreso de compras, inspecciones, producción y envíos a almacenes Amazon
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => openAddModal('Pendiente')}>
-          <Plus size={16} /> Crear Tarea
-        </button>
+
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button 
+            className="btn btn-secondary btn-sm" 
+            onClick={fetchTasks}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Recargar tareas"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 
+            <span>Refrescar</span>
+          </button>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => openAddModal('Pendiente')}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+          >
+            <Plus size={16} /> <span>Crear Tarea</span>
+          </button>
+        </div>
       </div>
 
       {/* Kanban Board Grid */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '60px 0' }}>
           <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
         </div>
       ) : (
-        <div className="kanban-board">
+        <div className="kanban-board-wrapper">
           {columns.map(col => {
             const colTasks = tasks.filter(t => t.status === col.id);
             return (
               <div 
                 key={col.id} 
-                className="kanban-column"
+                className="kanban-column-box"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, col.id)}
               >
-                <div className="kanban-column-header">
-                  <div className="column-title">
-                    <span className={`badge ${col.badgeClass}`} style={{ width: '10px', height: '10px', padding: 0, borderRadius: '50%', backgroundColor: col.color }}></span>
-                    <span>{col.title}</span>
+                <div className="kanban-column-head">
+                  <div className="kanban-column-title-wrapper">
+                    <span className="kanban-column-dot" style={{ backgroundColor: col.color, boxShadow: `0 0 8px ${col.color}66` }}></span>
+                    <span className="kanban-column-label">{col.title}</span>
                   </div>
-                  <span className="column-count">{colTasks.length}</span>
+                  <span className="kanban-column-count-badge">{colTasks.length}</span>
                 </div>
 
-                <div className="kanban-cards-container">
-                  {colTasks.map(task => (
-                    <div 
-                      key={task.id} 
-                      className="kanban-card"
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, task.id)}
-                      onClick={() => openDetailModal(task)}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                        <span className="kanban-card-title">{task.title}</span>
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+                  {colTasks.map(task => {
+                    const priorityColor = 
+                      task.priority === 'Alta' ? 'var(--danger-color)' :
+                      task.priority === 'Media' ? 'var(--warning-color)' : 'var(--text-tertiary)';
+
+                    return (
+                      <div 
+                        key={task.id} 
+                        className="kanban-card-wrapper"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, task.id)}
+                        onClick={() => openDetailModal(task)}
+                      >
+                        {/* Priority Hairline Indicator on left edge */}
+                        <div className="kanban-card-priority-indicator" style={{ backgroundColor: priorityColor }} />
+
+                        <div className="kanban-card-header-row">
+                          <span className="kanban-card-task-title">{task.title}</span>
                           <button 
                             className="btn btn-secondary btn-sm btn-icon-only" 
-                            style={{ padding: '2px', borderRadius: '4px' }}
+                            style={{ padding: '3px', borderRadius: '4px', opacity: 0.7 }}
                             onClick={(e) => openEditModal(task, e)}
+                            title="Editar tarea"
                           >
-                            <Edit2 size={10} />
+                            <Edit2 size={11} />
                           </button>
                         </div>
-                      </div>
 
-                      {task.description && (
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                          {task.description}
-                        </p>
-                      )}
+                        {task.description && (
+                          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.4 }}>
+                            {task.description}
+                          </p>
+                        )}
 
-                      <div className="kanban-card-footer">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span className={`badge ${
-                            task.priority === 'Alta' ? 'badge-danger' : 
-                            task.priority === 'Media' ? 'badge-warning' : 'badge-neutral'
-                          }`} style={{ fontSize: '0.65rem', padding: '1px 6px' }}>
-                            {task.priority}
-                          </span>
-                          {task.status === 'Completado' && (() => {
-                            const updated = new Date(task.updated_at || task.created_at);
-                            const diffDays = Math.floor((new Date() - updated) / (1000 * 60 * 60 * 24));
-                            const daysLeft = Math.max(0, 30 - diffDays);
-                            return (
+                        <div className="kanban-card-footer-row">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span className={`badge ${
+                              task.priority === 'Alta' ? 'badge-danger' : 
+                              task.priority === 'Media' ? 'badge-warning' : 'badge-neutral'
+                            }`} style={{ fontSize: '0.65rem', padding: '2px 6px', fontWeight: 700 }}>
+                              {task.priority || 'Normal'}
+                            </span>
+
+                            {task.status === 'Completado' && (() => {
+                              const updated = new Date(task.updated_at || task.created_at);
+                              const diffDays = Math.floor((new Date() - updated) / (1000 * 60 * 60 * 24));
+                              const daysLeft = Math.max(0, 30 - diffDays);
+                              return (
+                                <span 
+                                  style={{ 
+                                    fontSize: '0.65rem', 
+                                    fontFamily: 'var(--font-mono)',
+                                    color: daysLeft <= 5 ? 'var(--danger-color)' : 'var(--text-secondary)',
+                                    backgroundColor: daysLeft <= 5 ? 'rgba(239, 68, 68, 0.12)' : 'var(--bg-secondary)',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px'
+                                  }}
+                                  title="Auto-limpieza a los 30 días"
+                                >
+                                  <Clock size={9} />
+                                  <span>{daysLeft === 0 ? 'Hoy' : `${daysLeft}d`}</span>
+                                </span>
+                              );
+                            })()}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            {task.due_date && (
+                              <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px' }} title="Fecha límite">
+                                <Clock size={10} />
+                                <span>{task.due_date.slice(5)}</span>
+                              </span>
+                            )}
+
+                            {task.task_comments && task.task_comments.length > 0 && (
                               <span 
                                 style={{ 
-                                  fontSize: '0.65rem', 
-                                  color: daysLeft <= 5 ? 'var(--danger-color)' : 'var(--text-secondary)',
-                                  backgroundColor: daysLeft <= 5 ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-secondary)',
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  fontWeight: daysLeft <= 5 ? '600' : 'normal'
-                                }}
-                                title="Días restantes antes de la auto-eliminación por inactividad (30 días)"
+                                  display: 'inline-flex', 
+                                  alignItems: 'center', 
+                                  gap: '3px', 
+                                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                                  color: 'var(--accent-color)',
+                                  padding: '1px 6px', 
+                                  borderRadius: '9999px',
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  fontFamily: 'var(--font-mono)'
+                                }} 
+                                title={`${task.task_comments.length} comentarios`}
                               >
-                                <Clock size={8} />
-                                <span>{daysLeft === 0 ? 'Hoy' : `${daysLeft}d`}</span>
+                                <MessageSquare size={10} />
+                                <span>{task.task_comments.length}</span>
                               </span>
-                            );
-                          })()}
-                        </div>
+                            )}
 
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          {task.due_date && (
-                            <span className="kanban-card-due" title="Fecha de vencimiento">
-                              <Clock size={10} />
-                              <span style={{ fontSize: '0.65rem' }}>{task.due_date.slice(5)}</span>
-                            </span>
-                          )}
-                          {task.task_comments && task.task_comments.length > 0 && (
-                            <span 
-                              style={{ 
-                                display: 'inline-flex', 
-                                alignItems: 'center', 
-                                gap: '3px', 
-                                backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                                color: '#60a5fa',
-                                padding: '1px 6px', 
-                                borderRadius: '9999px',
-                                fontSize: '0.65rem',
-                                fontWeight: '600'
-                              }} 
-                              title={`${task.task_comments.length} comentarios`}
+                            <div 
+                              className="kanban-avatar-bubble" 
+                              title={task.profiles?.full_name || task.profiles?.email || 'Sin asignar'}
                             >
-                              <MessageSquare size={10} style={{ strokeWidth: 2.5 }} />
-                              <span>{task.task_comments.length}</span>
-                            </span>
-                          )}
-                          <div 
-                            className="kanban-card-assignee" 
-                            title={task.profiles?.full_name || task.profiles?.email || 'Sin asignar'}
-                          >
-                            {getInitials(task.profiles?.full_name || task.profiles?.email)}
+                              {getInitials(task.profiles?.full_name || task.profiles?.email)}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+
                   <button 
                     className="btn btn-secondary btn-sm" 
-                    style={{ borderStyle: 'dashed', width: '100%', display: 'flex', gap: '6px', fontSize: '0.8rem', justifyContent: 'center', marginTop: '4px' }}
+                    style={{ borderStyle: 'dashed', width: '100%', display: 'flex', gap: '6px', fontSize: '0.78rem', justifyContent: 'center', marginTop: '6px', padding: '8px' }}
                     onClick={() => openAddModal(col.id)}
                   >
-                    <Plus size={12} /> Añadir Tarea
+                    <Plus size={13} /> Añadir Tarea
                   </button>
                 </div>
               </div>

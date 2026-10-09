@@ -38,31 +38,58 @@
 }
 
 [data-theme="dark"] {
-  /* Premium Sleek Dark Theme (Linear/Attio style) */
-  --bg-primary: #0b0c10;
-  --bg-secondary: #11131c;
-  --bg-tertiary: #1a1c28;
+  /* Bespoke Amazon FBA Merchant Studio Theme (Apple HIG & SaaS Linear style) */
+  --bg-primary: #07090e;
+  --bg-secondary: #0f121a;
+  --bg-tertiary: #171b26;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-tertiary: #64748b;
-  --border-color: #222533;
+  --border-color: rgba(255, 255, 255, 0.07);
   
-  --accent-color: #818cf8; /* Vibrant Indigo */
-  --accent-hover: #a5b4fc;
-  --accent-light: rgba(129, 140, 248, 0.08);
-  --accent-border: #312e81;
+  --accent-color: #f59e0b; /* Amazon FBA Gold Amber */
+  --accent-hover: #fbbf24;
+  --accent-light: rgba(245, 158, 11, 0.08);
+  --accent-border: rgba(245, 158, 11, 0.25);
   
-  --success-color: #34d399;
-  --success-light: rgba(52, 211, 153, 0.06);
-  --warning-color: #fbbf24;
-  --warning-light: rgba(251, 191, 36, 0.06);
-  --danger-color: #f87171;
-  --danger-light: rgba(248, 113, 113, 0.06);
+  --success-color: #10b981;
+  --success-light: rgba(16, 185, 129, 0.08);
+  --warning-color: #f59e0b;
+  --warning-light: rgba(245, 158, 11, 0.08);
+  --danger-color: #f43f5e;
+  --danger-light: rgba(244, 63, 94, 0.08);
   --info-color: #38bdf8;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 14px 32px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Apple HIG Active Press Micro-Interactions (Kill Latency) */
+button:active, .btn:active, .card:active, .menu-item:active {
+  transform: scale(0.97) !important;
+  transition: transform 100ms cubic-bezier(0, 0, 0.2, 1) !important;
+}
+
+/* Tabular Number Alignment for Financial Data & SKUs */
+.metric-value, .tabular-num, font-mono {
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum";
+  font-feature-settings: "tnum";
+}
+
+/* Optical Typography Scaling */
+.page-title {
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+}
+
+/* Apple Glass Backdrop Layer */
+.apple-glass-panel {
+  background: rgba(15, 18, 26, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
 }
 
 * {
@@ -1929,6 +1956,139 @@ body {
   border-top: 1px solid #f0f0f0;
   padding-top: 10px;
   margin-top: 6px;
+}
+
+/* ─── Apple / Linear Style Kanban Board Enhancements ─────────── */
+.kanban-board-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.kanban-column-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 520px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.kanban-column-box.drag-over {
+  border-color: var(--accent-color);
+  background-color: var(--accent-light);
+}
+
+.kanban-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kanban-column-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-column-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.kanban-column-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.kanban-column-count-badge {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.kanban-card-wrapper {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: grab;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kanban-card-wrapper:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.kanban-card-wrapper:active {
+  transform: scale(0.97) !important;
+  cursor: grabbing;
+}
+
+.kanban-card-priority-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+.kanban-card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.kanban-card-task-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.kanban-card-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.kanban-avatar-bubble {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-color);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--bg-secondary);
 }
 
 [data-theme='dark'] .month-picker-footer {

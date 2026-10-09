@@ -303,38 +303,53 @@ export default function Inventory() {
   };
 
   return (
-    <div>
-      <div className="page-header">
+    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <h1 className="page-title">Inventario</h1>
-          <p className="page-subtitle">Sincroniza el inventario en tiempo real, costes y cobertura de stock</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span style={{ 
+              fontSize: '0.75rem', 
+              fontWeight: 600, 
+              color: 'var(--accent-color)', 
+              letterSpacing: '0.05em', 
+              textTransform: 'uppercase' 
+            }}>Control de Stock & Cobertura</span>
+          </div>
+          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Inventario FBA / Local</h1>
+          <p className="page-subtitle">Monitoreo en tiempo real de disponibilidades, días de cobertura y movimientos</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-primary btn-sm" onClick={() => openSaleModal('')}>
+          <button className="btn btn-primary btn-sm" onClick={() => openSaleModal('')} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
             <ShoppingCart size={14} /> Registrar Venta
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={activeTab === 'inventory' ? fetchInventory : fetchMovements}>
+          <button className="btn btn-secondary btn-sm" onClick={activeTab === 'inventory' ? fetchInventory : fetchMovements} style={{ borderRadius: '10px' }}>
             <RefreshCw size={14} /> Actualizar
           </button>
         </div>
       </div>
 
       {/* Tabs Menu */}
-      <div className="tab-menu" style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '24px', gap: '20px' }}>
+      <div className="tab-menu" style={{ 
+        display: 'flex', 
+        borderBottom: '1px solid var(--border-color)', 
+        marginBottom: '24px', 
+        gap: '24px' 
+      }}>
         <button 
           onClick={() => setActiveTab('inventory')}
           style={{
-            padding: '10px 4px',
+            padding: '12px 4px',
             background: 'none',
             border: 'none',
             borderBottom: activeTab === 'inventory' ? '2px solid var(--accent-color)' : '2px solid transparent',
             color: activeTab === 'inventory' ? 'var(--accent-color)' : 'var(--text-secondary)',
-            fontWeight: 600,
+            fontWeight: activeTab === 'inventory' ? 700 : 500,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            transition: 'all 0.15s ease'
           }}
         >
           <List size={16} /> Catálogo de Inventario
@@ -342,17 +357,18 @@ export default function Inventory() {
         <button 
           onClick={() => setActiveTab('history')}
           style={{
-            padding: '10px 4px',
+            padding: '12px 4px',
             background: 'none',
             border: 'none',
             borderBottom: activeTab === 'history' ? '2px solid var(--accent-color)' : '2px solid transparent',
             color: activeTab === 'history' ? 'var(--accent-color)' : 'var(--text-secondary)',
-            fontWeight: 600,
+            fontWeight: activeTab === 'history' ? 700 : 500,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            transition: 'all 0.15s ease'
           }}
         >
           <History size={16} /> Historial de Movimientos
@@ -362,59 +378,70 @@ export default function Inventory() {
       {activeTab === 'inventory' ? (
         <>
           {/* Search and Alert Indicators */}
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ position: 'relative', width: '300px' }}>
-              <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-tertiary)' }} />
+          <div style={{ 
+            display: 'flex', 
+            gap: '16px', 
+            marginBottom: '24px', 
+            flexWrap: 'wrap', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            background: 'var(--surface-color)',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <div style={{ position: 'relative', width: '320px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
               <input 
                 type="text" 
                 className="form-input" 
-                placeholder="Buscar por SKU o nombre..." 
+                placeholder="Buscar por SKU o nombre de producto..." 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ paddingLeft: '36px' }}
+                style={{ paddingLeft: '40px', borderRadius: '10px' }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                <AlertCircle size={16} style={{ color: 'var(--danger-color)' }} />
-                <span>Stock crítico</span>
+            <div style={{ display: 'flex', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', fontWeight: 600, color: '#ef4444' }}>
+                <AlertCircle size={15} />
+                <span>Stock Crítico (&lt; Mínimo)</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
-                <AlertTriangle size={16} style={{ color: 'var(--warning-color)' }} />
-                <span>Stock bajo</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.825rem', fontWeight: 600, color: '#f59e0b' }}>
+                <AlertTriangle size={15} />
+                <span>Riesgo de Reorden</span>
               </div>
             </div>
           </div>
 
           {/* Inventory Table */}
           {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-              <RefreshCw className="animate-spin" size={24} style={{ color: 'var(--accent-color)' }} />
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}>
+              <RefreshCw className="animate-spin" size={28} style={{ color: 'var(--accent-color)' }} />
             </div>
           ) : filteredInventory.length === 0 ? (
-            <div className="card" style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-              <TrendingUp size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-              <h3>No se encontraron registros de inventario</h3>
-              <p style={{ marginTop: '8px' }}>El inventario se crea automáticamente al añadir productos al catálogo.</p>
+            <div className="card" style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text-secondary)', borderRadius: '16px' }}>
+              <TrendingUp size={48} style={{ margin: '0 auto 16px', opacity: 0.4, color: 'var(--accent-color)' }} />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>No se encontraron registros de inventario</h3>
+              <p style={{ margin: 0, fontSize: '0.875rem' }}>El inventario se crea automáticamente al registrar nuevos SKUs en el catálogo.</p>
             </div>
           ) : (
-            <div className="table-container">
-              <table className="table">
+            <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+              <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                 <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Nombre del Producto</th>
-                    <th>Stock Actual</th>
-                    <th>Stock Reservado</th>
-                    <th>Stock en Tránsito</th>
-                    <th>Disponible</th>
-                    <th>Mínimo</th>
-                    <th>Valor de Inventario</th>
-                    <th>Ventas 7d / 30d</th>
-                    <th>Velocidad Diaria</th>
-                    <th>Cobertura Est.</th>
-                    <th style={{ textAlign: 'right' }}>Acciones</th>
+                  <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Almacén</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Físico</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Reservado</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>En Tránsito</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Disponible</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Mínimo</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Valor Stock</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Ventas (30d)</th>
+                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Cobertura Est.</th>
+                    <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -424,29 +451,44 @@ export default function Inventory() {
 
                     return (
                       <tr key={item.id} style={{ 
-                        backgroundColor: isCritical ? 'var(--danger-light)' : isUnderMin ? 'var(--warning-light)' : 'transparent' 
+                        backgroundColor: isCritical ? 'rgba(239, 68, 68, 0.05)' : isUnderMin ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
+                        borderBottom: '1px solid var(--border-color)',
+                        transition: 'background 0.15s ease'
                       }}>
-                        <td style={{ fontWeight: 600 }}>{item.sku_internal}</td>
-                        <td>
+                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.85rem' }}>
+                          <span style={{ 
+                            background: 'rgba(245, 158, 11, 0.08)', 
+                            color: 'var(--text-primary)', 
+                            padding: '4px 8px', 
+                            borderRadius: '6px',
+                            border: '1px solid rgba(245, 158, 11, 0.2)'
+                          }}>
+                            {item.sku_internal}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontWeight: 500 }}>{item.product_name}</span>
-                              <span className={`badge ${item.warehouse_type === 'FBA' ? 'badge-primary' : 'badge-neutral'}`} style={{ 
+                              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{item.product_name}</span>
+                              <span style={{ 
                                 fontSize: '0.7rem', 
-                                padding: '2px 6px',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
                                 textTransform: 'uppercase',
-                                fontWeight: 'bold'
+                                fontWeight: 700,
+                                background: item.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
+                                color: item.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)'
                               }}>
                                 {item.warehouse_type}
                               </span>
                             </div>
-                            {item.sku_amazon && <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>AMZN: {item.sku_amazon}</span>}
+                            {item.sku_amazon && <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>AMZN: {item.sku_amazon}</span>}
                           </div>
                         </td>
-                        <td>{item.stock_current}</td>
-                        <td>{item.stock_reserved}</td>
-                        <td>{item.stock_in_transit}</td>
-                        <td style={{ fontWeight: 600 }}>
+                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{item.stock_current}</td>
+                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{item.stock_reserved}</td>
+                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{item.stock_in_transit}</td>
+                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: isCritical ? '#ef4444' : isUnderMin ? '#f59e0b' : 'var(--text-primary)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             {item.stock_available}
                             {isCritical ? (
