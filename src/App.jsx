@@ -21,7 +21,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [currentTab, setCurrentTab] = useState('dashboard');
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);

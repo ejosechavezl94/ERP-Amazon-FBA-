@@ -20,15 +20,21 @@ export default function Tasks() {
   const [editingTask, setEditingTask] = useState(null);
   const [error, setError] = useState(null);
 
+  // Filter & Search states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPriority, setFilterPriority] = useState('Todas');
+  const [filterMine, setFilterMine] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
   // Comment Form states
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
 
   const columns = [
-    { id: 'Pendiente', title: 'Pendiente', badgeClass: 'badge-neutral', color: '#8a99ad' },
-    { id: 'En progreso', title: 'En Progreso', badgeClass: 'badge-neutral', color: '#00c2ff' },
-    { id: 'Esperando respuesta', title: 'Esperando Respuesta', badgeClass: 'badge-warning', color: '#ffb900' },
-    { id: 'Completado', title: 'Completado', badgeClass: 'badge-success', color: '#10b981' }
+    { id: 'Pendiente', title: 'Pendiente', color: '#64748b' },
+    { id: 'En progreso', title: 'En Progreso', color: '#f59e0b' },
+    { id: 'Esperando respuesta', title: 'Esperando Respuesta', color: '#38bdf8' },
+    { id: 'Completado', title: 'Completado', color: '#10b981' }
   ];
 
   const fetchTasks = async () => {
@@ -60,6 +66,9 @@ export default function Tasks() {
   useEffect(() => {
     fetchTasks();
     fetchProfiles();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) setCurrentUserId(session.user.id);
+    });
   }, []);
 
   const openAddModal = (colId = 'Pendiente') => {
@@ -224,13 +233,40 @@ export default function Tasks() {
     }
   };
 
+  const handleUpdateStatusDirect = async (taskId, newStatus) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    setSelectedTask(prev => prev && prev.id === taskId ? { ...prev, status: newStatus } : prev);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', taskId);
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error updating status directly:', err);
+      fetchTasks();
+    }
+  };
+
   const getInitials = (name) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  // Filter tasks based on live search, priority and assignee
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = !searchQuery || 
+      task.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesPriority = filterPriority === 'Todas' || task.priority === filterPriority;
+    const matchesMine = !filterMine || (task.assignee_id && task.assignee_id === currentUserId);
+
+    return matchesSearch && matchesPriority && matchesMine;
+  });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.2s ease-out' }}>
       {/* Executive Kanban Header */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: 0 }}>
         <div>
@@ -247,7 +283,7 @@ export default function Tasks() {
           <button 
             className="btn btn-secondary btn-sm" 
             onClick={fetchTasks}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
             title="Recargar tareas"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 
@@ -256,10 +292,93 @@ export default function Tasks() {
           <button 
             className="btn btn-primary" 
             onClick={() => openAddModal('Pendiente')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, borderRadius: '8px' }}
           >
             <Plus size={16} /> <span>Crear Tarea</span>
           </button>
+        </div>
+      </div>
+
+      {/* Linear Quick Filters & Search Toolbar */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        gap: '14px', 
+        flexWrap: 'wrap',
+        background: 'var(--surface-color)',
+        padding: '12px 18px',
+        borderRadius: '12px',
+        border: '1px solid var(--border-color)',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        {/* Left: Search input */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: '260px' }}>
+          <input 
+            type="text" 
+            className="form-input" 
+            placeholder="Buscar por título o detalle de tarea..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{ 
+              padding: '7px 12px', 
+              fontSize: '0.84rem', 
+              borderRadius: '8px',
+              backgroundColor: 'var(--bg-primary)'
+            }}
+          />
+        </div>
+
+        {/* Right: Quick filter buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Priority filter pills */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--bg-primary)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+            {['Todas', 'Alta', 'Media', 'Baja'].map(p => (
+              <button
+                key={p}
+                onClick={() => setFilterPriority(p)}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.75rem',
+                  fontWeight: filterPriority === p ? 700 : 500,
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  backgroundColor: filterPriority === p ? 'var(--accent-color)' : 'transparent',
+                  color: filterPriority === p ? '#090b10' : 'var(--text-secondary)',
+                  transition: 'all 0.12s ease'
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {/* Mine filter toggle */}
+          {currentUserId && (
+            <button
+              onClick={() => setFilterMine(prev => !prev)}
+              style={{
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                border: '1px solid',
+                borderColor: filterMine ? 'var(--accent-color)' : 'var(--border-color)',
+                backgroundColor: filterMine ? 'var(--accent-light)' : 'var(--bg-primary)',
+                color: filterMine ? 'var(--accent-color)' : 'var(--text-secondary)',
+                transition: 'all 0.12s ease'
+              }}
+            >
+              Solo mías {filterMine && '✓'}
+            </button>
+          )}
+
+          {/* Counter */}
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginLeft: '4px' }}>
+            {filteredTasks.length} {filteredTasks.length === 1 ? 'tarea' : 'tareas'}
+          </span>
         </div>
       </div>
 
@@ -271,7 +390,7 @@ export default function Tasks() {
       ) : (
         <div className="kanban-board-wrapper">
           {columns.map(col => {
-            const colTasks = tasks.filter(t => t.status === col.id);
+            const colTasks = filteredTasks.filter(t => t.status === col.id);
             return (
               <div 
                 key={col.id} 
@@ -515,83 +634,228 @@ export default function Tasks() {
         </div>
       )}
 
-      {/* Task Details & Comments Modal */}
+      {/* Task Details & Comments Slide-Over Drawer (Linear / Apple style) */}
       {isDetailModalOpen && selectedTask && (
-        <div className="modal-overlay" onClick={() => setIsDetailModalOpen(false)}>
-          <div className="modal-content" style={{ maxWidth: '650px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Detalles de Tarea</h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => handleDelete(selectedTask.id)} title="Eliminar tarea">
-                  <Trash2 size={14} />
+        <div 
+          className="modal-overlay" 
+          onClick={() => setIsDetailModalOpen(false)}
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'stretch',
+            padding: 0,
+            background: 'rgba(5, 7, 10, 0.65)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 1000
+          }}
+        >
+          <div 
+            style={{ 
+              width: '520px', 
+              maxWidth: '92vw', 
+              height: '100vh',
+              backgroundColor: 'var(--surface-color)',
+              borderLeft: '1px solid var(--border-color)',
+              boxShadow: '0 0 40px rgba(0, 0, 0, 0.6)',
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'fadeIn 0.18s ease-out',
+              overflow: 'hidden'
+            }} 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Top Header */}
+            <div style={{ 
+              padding: '16px 22px', 
+              borderBottom: '1px solid var(--border-color)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              backgroundColor: 'var(--bg-secondary)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-color)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  Detalles de Tarea
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button 
+                  className="btn btn-secondary btn-sm"
+                  onClick={(e) => openEditModal(selectedTask, e)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', borderRadius: '6px' }}
+                >
+                  <Edit2 size={12} /> Editar
                 </button>
-                <button className="action-btn" onClick={() => setIsDetailModalOpen(false)}><X size={18} /></button>
+                <button 
+                  className="btn btn-danger btn-sm btn-icon-only" 
+                  onClick={() => {
+                    handleDelete(selectedTask.id);
+                    setIsDetailModalOpen(false);
+                  }} 
+                  title="Eliminar tarea"
+                  style={{ borderRadius: '6px', padding: '6px' }}
+                >
+                  <Trash2 size={13} />
+                </button>
+                <button 
+                  className="action-btn" 
+                  onClick={() => setIsDetailModalOpen(false)}
+                  style={{ borderRadius: '6px', padding: '6px' }}
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
             
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Drawer Scrollable Body */}
+            <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+              {/* Task Title */}
               <div>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedTask.title}</h2>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                  <span className="badge badge-neutral">Estado: {selectedTask.status}</span>
-                  <span className={`badge ${selectedTask.priority === 'Alta' ? 'badge-danger' : selectedTask.priority === 'Media' ? 'badge-warning' : 'badge-neutral'}`}>
-                    Prioridad: {selectedTask.priority}
-                  </span>
-                  {selectedTask.due_date && (
-                    <span className="badge badge-neutral" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Clock size={12} /> Límite: {selectedTask.due_date}
-                    </span>
-                  )}
-                  {selectedTask.profiles && (
-                    <span className="badge badge-neutral" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <User size={12} /> Responsable: {selectedTask.profiles.full_name || selectedTask.profiles.email}
-                    </span>
-                  )}
+                <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3, letterSpacing: '-0.02em' }}>
+                  {selectedTask.title}
+                </h2>
+
+                {/* Quick Status Selector Pills */}
+                <div style={{ marginTop: '16px' }}>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+                    Estado Rápido
+                  </label>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {columns.map(col => {
+                      const isCurrent = selectedTask.status === col.id;
+                      return (
+                        <button
+                          key={col.id}
+                          onClick={() => handleUpdateStatusDirect(selectedTask.id, col.id)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: isCurrent ? 700 : 500,
+                            cursor: 'pointer',
+                            border: '1px solid',
+                            borderColor: isCurrent ? col.color : 'var(--border-color)',
+                            backgroundColor: isCurrent ? `${col.color}22` : 'var(--bg-primary)',
+                            color: isCurrent ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            transition: 'all 0.12s ease'
+                          }}
+                        >
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: col.color }} />
+                          {col.title}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
+              {/* Metadata Grid */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '12px',
+                padding: '16px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--bg-primary)',
+                border: '1px solid var(--border-color)'
+              }}>
+                <div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Prioridad</span>
+                  <span className={`badge ${
+                    selectedTask.priority === 'Alta' ? 'badge-danger' : 
+                    selectedTask.priority === 'Media' ? 'badge-warning' : 'badge-neutral'
+                  }`} style={{ fontSize: '0.72rem', padding: '3px 8px', fontWeight: 700 }}>
+                    {selectedTask.priority || 'Normal'}
+                  </span>
+                </div>
+
+                <div>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Fecha Límite</span>
+                  <span style={{ fontSize: '0.85rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={13} style={{ color: 'var(--text-tertiary)' }} />
+                    {selectedTask.due_date || 'Sin fecha'}
+                  </span>
+                </div>
+
+                <div style={{ gridColumn: 'span 2', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Responsable</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="kanban-avatar-bubble" style={{ width: '24px', height: '24px', fontSize: '0.7rem' }}>
+                      {getInitials(selectedTask.profiles?.full_name || selectedTask.profiles?.email)}
+                    </div>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                      {selectedTask.profiles?.full_name || selectedTask.profiles?.email || 'Sin asignar'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
               {selectedTask.description && (
-                <div style={{ padding: '16px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '8px' }}>Descripción</h4>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>{selectedTask.description}</p>
+                <div style={{ padding: '16px', backgroundColor: 'var(--bg-primary)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                    Descripción
+                  </h4>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5, margin: 0 }}>
+                    {selectedTask.description}
+                  </p>
                 </div>
               )}
 
-              {/* Comments Section */}
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-                  <MessageSquare size={16} /> Comentarios ({comments.length})
+              {/* Comments Discussion Thread */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <h4 style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                  <MessageSquare size={15} style={{ color: 'var(--accent-color)' }} /> 
+                  Comentarios y Actividad ({comments.length})
                 </h4>
 
                 {/* Comment list */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '200px', overflowY: 'auto', marginBottom: '16px', paddingRight: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '240px', overflowY: 'auto' }}>
                   {comments.length === 0 ? (
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No hay comentarios aún. Deja un comentario abajo.</p>
+                    <p style={{ fontSize: '0.825rem', color: 'var(--text-tertiary)', fontStyle: 'italic', margin: 0 }}>
+                      No hay comentarios aún. Deja una nota o actualización sobre esta tarea.
+                    </p>
                   ) : (
                     comments.map(c => (
-                      <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '10px 12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-color)' }}>
+                      <div key={c.id} style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '4px', 
+                        padding: '10px 14px', 
+                        backgroundColor: 'var(--bg-primary)', 
+                        borderRadius: '10px', 
+                        border: '1px solid var(--border-color)' 
+                      }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                          <span>{c.profiles?.full_name || c.profiles?.email || 'Usuario'}</span>
-                          <span>{new Date(c.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                          <span style={{ color: 'var(--text-primary)' }}>{c.profiles?.full_name || c.profiles?.email || 'Usuario'}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                            {new Date(c.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginTop: '2px' }}>{c.comment_text}</p>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4, margin: 0 }}>
+                          {c.comment_text}
+                        </p>
                       </div>
                     ))
                   )}
                 </div>
 
                 {/* Add comment form */}
-                <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '8px' }}>
+                <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                   <input 
                     type="text" 
                     className="form-input" 
-                    placeholder="Escribe un comentario..." 
+                    placeholder="Escribir una actualización..." 
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
+                    style={{ borderRadius: '8px', fontSize: '0.85rem', backgroundColor: 'var(--bg-primary)' }}
                     required
                   />
-                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px' }}>
-                    Comentar
+                  <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', borderRadius: '8px' }}>
+                    Enviar
                   </button>
                 </form>
               </div>

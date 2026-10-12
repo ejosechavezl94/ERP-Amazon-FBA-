@@ -31,3 +31,5 @@ dist-ssr
 .env.production.local
 
 .vercel
+.agents/
+skills-lock.json

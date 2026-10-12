@@ -14,7 +14,7 @@ export default function SessionNavBar({
   theme, 
   toggleTheme
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const accountRef = useRef(null);
 
@@ -77,9 +77,7 @@ export default function SessionNavBar({
 
   return (
     <aside
-      className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}
-      onMouseEnter={() => setIsCollapsed(false)}
-      onMouseLeave={() => setIsCollapsed(true)}
+      className="sidebar"
       style={{ overflow: 'visible' }} // Allow dropdowns to float outside
     >
       {/* Header / App Name & Logo */}
@@ -322,39 +320,6 @@ export default function SessionNavBar({
           )}
         </div>
       </div>
-      
-      {/* Liquid Glass SVG Filter */}
-      <svg style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }}>
-        <defs>
-          <filter
-            id="container-glass"
-            x="-10%"
-            y="-10%"
-            width="120%"
-            height="120%"
-            colorInterpolationFilters="sRGB"
-          >
-            <feTurbulence
-              type="fractalNoise"
-              baseFrequency="0.02 0.02"
-              numOctaves="1"
-              seed="1"
-              result="turbulence"
-            />
-            <feGaussianBlur in="turbulence" stdDeviation="1" result="blurredNoise" />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="blurredNoise"
-              scale="6"
-              xChannelSelector="R"
-              yChannelSelector="B"
-              result="displaced"
-            />
-            <feGaussianBlur in="displaced" stdDeviation="0" result="finalBlur" />
-            <feComposite in="SourceGraphic" in2="finalBlur" operator="over" />
-          </filter>
-        </defs>
-      </svg>
     </aside>
   );
 }
