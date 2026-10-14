@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Edit2, Search, X, Check, RefreshCw, AlertTriangle, AlertCircle, 
-  TrendingUp, ShoppingCart, History, List, Calendar, User, FileText, ArrowUpRight, ArrowDownRight, Trash2
+  TrendingUp, ShoppingCart, History, List, Calendar, User, FileText, ArrowUpRight, ArrowDownRight, Trash2,
+  Package, Building2
 } from 'lucide-react';
 
 export default function Inventory() {
@@ -13,6 +14,7 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterWarehouse, setFilterWarehouse] = useState('ALL'); // 'ALL' | 'FBA' | 'LOCAL'
   
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -273,12 +275,20 @@ export default function Inventory() {
   };
 
   const filteredInventory = inventory.filter(item => {
-    return (
-      item.product_name.toLowerCase().includes(search.toLowerCase()) ||
-      item.sku_internal.toLowerCase().includes(search.toLowerCase()) ||
-      (item.sku_amazon && item.sku_amazon.toLowerCase().includes(search.toLowerCase()))
-    );
+    const pName = (item.product_name || 'Sin nombre').toLowerCase();
+    const skuInt = (item.sku_internal || '').toLowerCase();
+    const skuAmz = (item.sku_amazon || '').toLowerCase();
+    const s = (search || '').toLowerCase();
+
+    const matchesSearch = pName.includes(s) || skuInt.includes(s) || skuAmz.includes(s);
+    const itemWarehouse = (item.warehouse_type || 'LOCAL').toUpperCase();
+    const matchesWarehouse = filterWarehouse === 'ALL' || itemWarehouse === filterWarehouse;
+
+    return matchesSearch && matchesWarehouse;
   });
+
+  const fbaCount = inventory.filter(i => (i.warehouse_type || '').toUpperCase() === 'FBA').length;
+  const localCount = inventory.filter(i => (i.warehouse_type || '').toUpperCase() === 'LOCAL').length;
 
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(val);
@@ -377,7 +387,7 @@ export default function Inventory() {
 
       {activeTab === 'inventory' ? (
         <>
-          {/* Search and Alert Indicators */}
+          {/* Search, Warehouse Filters and Alert Indicators */}
           <div style={{ 
             display: 'flex', 
             gap: '16px', 
@@ -391,16 +401,89 @@ export default function Inventory() {
             border: '1px solid var(--border-color)',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div style={{ position: 'relative', width: '320px' }}>
-              <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
-              <input 
-                type="text" 
-                className="form-input" 
-                placeholder="Buscar por SKU o nombre de producto..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{ paddingLeft: '40px', borderRadius: '10px' }}
-              />
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', width: '280px' }}>
+                <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Buscar por SKU o nombre de producto..." 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ paddingLeft: '40px', borderRadius: '10px' }}
+                />
+              </div>
+
+              {/* Warehouse attribution switcher */}
+              <div style={{ 
+                display: 'inline-flex', 
+                gap: '4px', 
+                background: 'var(--bg-tertiary)', 
+                padding: '4px', 
+                borderRadius: '10px',
+                border: '1px solid var(--border-color)'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setFilterWarehouse('ALL')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: filterWarehouse === 'ALL' ? 700 : 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: filterWarehouse === 'ALL' ? 'var(--surface-color)' : 'transparent',
+                    color: filterWarehouse === 'ALL' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    boxShadow: filterWarehouse === 'ALL' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Todos ({inventory.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterWarehouse('FBA')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: filterWarehouse === 'FBA' ? 700 : 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: filterWarehouse === 'FBA' ? 'rgba(245, 158, 11, 0.18)' : 'transparent',
+                    color: filterWarehouse === 'FBA' ? '#f59e0b' : 'var(--text-secondary)',
+                    boxShadow: filterWarehouse === 'FBA' ? '0 1px 3px rgba(245,158,11,0.2)' : 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Package size={13} /> Amazon FBA ({fbaCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterWarehouse('LOCAL')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: filterWarehouse === 'LOCAL' ? 700 : 500,
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: filterWarehouse === 'LOCAL' ? 'rgba(59, 130, 246, 0.18)' : 'transparent',
+                    color: filterWarehouse === 'LOCAL' ? '#60a5fa' : 'var(--text-secondary)',
+                    boxShadow: filterWarehouse === 'LOCAL' ? '0 1px 3px rgba(59,130,246,0.2)' : 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Building2 size={13} /> Almacén Local ({localCount})
+                </button>
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: '20px' }}>
@@ -467,22 +550,56 @@ export default function Inventory() {
                           </span>
                         </td>
                         <td style={{ padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{item.product_name}</span>
-                              <span style={{ 
-                                fontSize: '0.7rem', 
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                textTransform: 'uppercase',
-                                fontWeight: 700,
-                                background: item.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
-                                color: item.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)'
-                              }}>
-                                {item.warehouse_type}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                                {item.product_name || 'Sin nombre'}
+                              </span>
+                              {item.warehouse_type === 'FBA' ? (
+                                <span 
+                                  title="Stock en centro logístico de Amazon FBA"
+                                  style={{ 
+                                    fontSize: '0.72rem', 
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    fontWeight: 700,
+                                    background: 'rgba(245, 158, 11, 0.15)',
+                                    color: '#f59e0b',
+                                    border: '1px solid rgba(245, 158, 11, 0.35)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <Package size={12} /> Amazon FBA
+                                </span>
+                              ) : (
+                                <span 
+                                  title="Stock físico en almacén local propio"
+                                  style={{ 
+                                    fontSize: '0.72rem', 
+                                    padding: '2px 8px',
+                                    borderRadius: '6px',
+                                    fontWeight: 700,
+                                    background: 'rgba(59, 130, 246, 0.15)',
+                                    color: '#60a5fa',
+                                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  <Building2 size={12} /> Almacén Local
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', flexWrap: 'wrap' }}>
+                              {item.product_brand && <span>Marca: {item.product_brand}</span>}
+                              {item.sku_amazon && <span style={{ fontFamily: 'var(--font-mono)' }}>AMZN: {item.sku_amazon}</span>}
+                              <span style={{ color: item.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)' }}>
+                                Ubicación: {item.warehouse_type === 'FBA' ? 'Centro Logístico Amazon FBA' : 'Almacén Físico Propio'}
                               </span>
                             </div>
-                            {item.sku_amazon && <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>AMZN: {item.sku_amazon}</span>}
                           </div>
                         </td>
                         <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{item.stock_current}</td>
@@ -518,7 +635,7 @@ export default function Inventory() {
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <div style={{ display: 'inline-flex', gap: '8px' }}>
-                            <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openSaleModal(item.product_id, item.warehouse_type)} title="Registrar Venta">
+                            <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openSaleModal(item.product_id, item.warehouse_type || 'LOCAL')} title="Registrar Venta">
                               <ShoppingCart size={14} />
                             </button>
                             <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(item)} title="Ajustar Stock / Parámetros">
@@ -631,9 +748,26 @@ export default function Inventory() {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--border-radius-sm)' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Producto</span>
-                  <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{editingItem?.product_name}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', padding: '12px', backgroundColor: 'var(--bg-tertiary)', borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Producto & Ubicación</span>
+                    <span style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: 700, 
+                      padding: '2px 8px', 
+                      borderRadius: '6px',
+                      background: editingItem?.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                      color: editingItem?.warehouse_type === 'FBA' ? '#f59e0b' : '#60a5fa',
+                      border: `1px solid ${editingItem?.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.35)' : 'rgba(59, 130, 246, 0.35)'}`,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      {editingItem?.warehouse_type === 'FBA' ? <><Package size={12} /> Almacén Amazon FBA</> : <><Building2 size={12} /> Almacén Local</>}
+                    </span>
+                  </div>
+                  <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{editingItem?.product_name || 'Sin nombre'}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>SKU: {editingItem?.sku_internal}</span>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

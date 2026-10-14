@@ -441,6 +441,55 @@ function App() {
                         ))
                       )}
                     </div>
+
+                    {/* SP-API Sales Notification Info Banner */}
+                    <div style={{
+                      marginTop: '14px',
+                      padding: '10px 12px',
+                      backgroundColor: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius-sm)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-color)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Bell size={12} /> Avisos de Ventas Amazon FBA
+                        </span>
+                        <span style={{ 
+                          fontSize: '0.65rem', 
+                          padding: '1px 6px', 
+                          borderRadius: '4px', 
+                          background: 'rgba(245, 158, 11, 0.15)', 
+                          color: '#f59e0b', 
+                          fontWeight: 700 
+                        }}>
+                          Requiere SP-API
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.35 }}>
+                        Actualmente esta campana solo emite avisos de rotura de stock. Las alertas en tiempo real de nuevas ventas y pedidos FBA se habilitarán al vincular la cuenta SP-API.
+                      </p>
+                      <button 
+                        onClick={() => { setIsNotifOpen(false); setCurrentTab('settings'); }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--accent-color)',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: 0,
+                          textAlign: 'left',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        Configurar integración SP-API →
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
