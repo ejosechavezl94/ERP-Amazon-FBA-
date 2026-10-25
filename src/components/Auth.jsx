@@ -38,10 +38,8 @@ const TestimonialCard = ({ testimonial, delay }) => (
 );
 
 export default function Auth({ onAuthSuccess }) {
-  const isSignUp = false;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -73,70 +71,36 @@ export default function Auth({ onAuthSuccess }) {
     setError(null);
     setMessage('');
     setLoading(true);
-    console.log("handleAuth started. isSignUp:", isSignUp, "email:", email);
 
     try {
-      if (isSignUp) {
-        console.log("Attempting signUp...");
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            }
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (signInError) throw signInError;
+      
+      if (data && data.session) {
+        const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assuranceError) throw assuranceError;
+
+        if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+          const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+          if (factorsError) throw factorsError;
+
+          const verifiedFactor = factors && factors.all ? factors.all.find(f => f.status === 'verified') : null;
+          if (verifiedFactor) {
+            setMfaFactorId(verifiedFactor.id);
+            setShowMfa(true);
+            setLoading(false);
+            return;
           }
-        });
-        if (signUpError) throw signUpError;
-        console.log("signUp success:", data);
-        setMessage('¡Registro exitoso! Por favor verifica tu correo electrónico o inicia sesión.');
-      } else {
-        console.log("Attempting signInWithPassword...");
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        console.log("signInWithPassword resolved. Data:", !!data, "Error:", signInError);
-        if (signInError) throw signInError;
-        
-        if (data && data.session) {
-          console.log("Session exists in signIn response. Checking MFA...");
-          const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-          console.log("MFA assurance level checked. Data:", assurance, "Error:", assuranceError);
-          if (assuranceError) throw assuranceError;
-
-          if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-            console.log("MFA is required (aal2 next, not currently aal2). Listing factors...");
-            const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
-            console.log("Factors listed. Data:", factors, "Error:", factorsError);
-            if (factorsError) throw factorsError;
-
-            const verifiedFactor = factors && factors.all ? factors.all.find(f => f.status === 'verified') : null;
-            console.log("Verified factor found:", verifiedFactor);
-            if (verifiedFactor) {
-              console.log("Setting MFA state and showing MFA screen...");
-              setMfaFactorId(verifiedFactor.id);
-              setShowMfa(true);
-              setLoading(false);
-              return;
-            } else {
-              console.log("MFA nextLevel is aal2 but no verified factors found!");
-            }
-          } else {
-            console.log("MFA is not required. Session assurance level:", assurance);
-          }
-
-          console.log("Calling onAuthSuccess with session...");
-          onAuthSuccess(data.session);
-        } else {
-          console.log("signInWithPassword succeeded but data.session is null.");
         }
+
+        onAuthSuccess(data.session);
       }
     } catch (err) {
-      console.error("Error inside handleAuth:", err);
       setError(err.message || 'Ocurrió un error inesperado');
     } finally {
-      console.log("handleAuth finally block. Setting loading to false...");
       setLoading(false);
     }
   };
@@ -221,17 +185,10 @@ export default function Auth({ onAuthSuccess }) {
           <div className="signin-form-inner">
             <div>
               <h1 className="animate-element animate-delay-100 signin-title">
-                {isSignUp ? (
-                  <span className="font-light tracking-tighter">Crear Cuenta</span>
-                ) : (
-                  <span className="font-light tracking-tighter">FBA Portal</span>
-                )}
+                <span className="font-light tracking-tighter">FBA Portal</span>
               </h1>
               <p className="animate-element animate-delay-200 signin-desc">
-                {isSignUp 
-                  ? "Registra una nueva cuenta de administrador para tu negocio Amazon FBA" 
-                  : "Accede a tu cuenta de administración y gestiona tu catálogo FBA"
-                }
+                Accede a tu cuenta de administración y gestiona tu catálogo FBA
               </p>
             </div>
 
@@ -248,23 +205,6 @@ export default function Auth({ onAuthSuccess }) {
             )}
 
             <form className="signin-form-inner" onSubmit={handleAuth} style={{ gap: '16px' }}>
-              {isSignUp && (
-                <div className="animate-element animate-delay-250">
-                  <label className="signin-label">Nombre Completo</label>
-                  <GlassInputWrapper>
-                    <input 
-                      name="fullName" 
-                      type="text" 
-                      placeholder="Introduce tu nombre completo" 
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="glass-input" 
-                      required 
-                    />
-                  </GlassInputWrapper>
-                </div>
-              )}
-
               <div className="animate-element animate-delay-300">
                 <label className="signin-label">Correo Electrónico</label>
                 <GlassInputWrapper>
@@ -316,20 +256,14 @@ export default function Auth({ onAuthSuccess }) {
                 </GlassInputWrapper>
               </div>
 
-              <div className="animate-element animate-delay-500" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                  <input type="checkbox" name="rememberMe" className="custom-checkbox" />
-                  <span style={{ color: 'var(--text-secondary)' }}>Recordarme</span>
-                </label>
-                {!isSignUp && (
-                  <a 
-                    href="#" 
-                    onClick={(e) => { e.preventDefault(); handleResetPassword(); }} 
-                    className="signin-link"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                )}
+              <div className="animate-element animate-delay-500" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontSize: '0.85rem' }}>
+                <a 
+                  href="#" 
+                  onClick={(e) => { e.preventDefault(); handleResetPassword(); }} 
+                  className="signin-link"
+                >
+                  ¿Olvidaste tu contraseña?
+                </a>
               </div>
 
               <button 
@@ -337,7 +271,7 @@ export default function Auth({ onAuthSuccess }) {
                 className="animate-element animate-delay-600 signin-btn-primary"
                 disabled={loading}
               >
-                {loading ? 'Procesando...' : isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}
+                {loading ? 'Procesando...' : 'Iniciar Sesión'}
               </button>
             </form>
 

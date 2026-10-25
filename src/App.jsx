@@ -2,17 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase, isConfigured } from './supabaseClient';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
-import Products from './components/Products';
-import Inventory from './components/Inventory';
-import Batches from './components/Batches';
-import Suppliers from './components/Suppliers';
-import PurchaseOrders from './components/PurchaseOrders';
-import Settings from './components/Settings';
 import GlobalSearch from './components/GlobalSearch';
-import SalesPage from './components/SalesPage';
 import SessionNavBar from './components/SessionNavBar';
 import MobileNavBar from './components/MobileNavBar';
 
+const Products = React.lazy(() => import('./components/Products'));
+const Inventory = React.lazy(() => import('./components/Inventory'));
+const Batches = React.lazy(() => import('./components/Batches'));
+const Suppliers = React.lazy(() => import('./components/Suppliers'));
+const PurchaseOrders = React.lazy(() => import('./components/PurchaseOrders'));
+const Settings = React.lazy(() => import('./components/Settings'));
+const SalesPage = React.lazy(() => import('./components/SalesPage'));
 const Tasks = React.lazy(() => import('./components/Tasks'));
 const GastosPage = React.lazy(() => import('./components/GastosPage'));
 
@@ -60,9 +60,7 @@ function App() {
   // 1. Session and Auth State management with 2FA check
   useEffect(() => {
     if (!isConfigured) return;
-    console.log("App mounted. Checking session...");
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("App getSession resolved. Session:", session ? "Exists" : "Null");
       if (session) {
         setSession(session);
         fetchUserProfile(session.user.id);
@@ -70,7 +68,6 @@ function App() {
         // MFA check in background
         supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
           if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-            console.log("App getSession: MFA required but only AAL1. Forcing re-auth...");
             setSession(null);
             setProfile(null);
           }
@@ -82,8 +79,7 @@ function App() {
       console.error("Error getting session on load:", err);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("onAuthStateChange fired! Event:", event, "Session user:", session?.user?.email || "Null");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setSession(session);
         fetchUserProfile(session.user.id);
@@ -91,7 +87,6 @@ function App() {
         // MFA check in background
         supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
           if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-            console.log("onAuthStateChange: MFA required but only AAL1. Setting session to null in UI...");
             setSession(null);
             setProfile(null);
           }
@@ -99,14 +94,12 @@ function App() {
           console.error("Error checking MFA in background on auth state change:", err);
         });
       } else {
-        console.log("onAuthStateChange: No session, clearing state in UI...");
         setSession(null);
         setProfile(null);
       }
     });
 
     return () => {
-      console.log("App unmounting. Unsubscribing from auth state changes...");
       subscription.unsubscribe();
     };
   }, []);

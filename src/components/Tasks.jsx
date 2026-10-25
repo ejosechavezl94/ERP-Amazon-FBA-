@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { Plus, Edit2, Trash2, X, Check, Clock, User, MessageSquare, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Check, Clock, MessageSquare, RefreshCw } from 'lucide-react';
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);

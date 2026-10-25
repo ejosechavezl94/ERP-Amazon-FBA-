@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
-import { Plus, Download, Trash2, ShoppingBag, ArrowUpRight, DollarSign } from "lucide-react";
+import { Plus, Download, Trash2, ShoppingBag } from "lucide-react";
 import { Calendar, MonthPicker } from "./ui/Calendar";
 import ConfirmDialog from "./ui/ConfirmDialog";
 

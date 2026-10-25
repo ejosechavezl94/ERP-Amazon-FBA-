@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, TrendingUp, DollarSign, Wallet, MoreHorizontal, 
   Package, ShoppingCart, Users, Layers, CheckSquare, Settings as SettingsIcon,
-  Sun, Moon, LogOut, X, Zap, ChevronRight
+  Sun, Moon, LogOut, X, ChevronRight
 } from 'lucide-react';
 
 export default function MobileNavBar({
@@ -12,8 +12,7 @@ export default function MobileNavBar({
   profile,
   handleSignOut,
   theme,
-  toggleTheme,
-  onOpenTasks
+  toggleTheme
 }) {
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false);
 

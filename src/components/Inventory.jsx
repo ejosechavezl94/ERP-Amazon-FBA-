@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Edit2, Search, X, Check, RefreshCw, AlertTriangle, AlertCircle, 
-  TrendingUp, ShoppingCart, History, List, Calendar, User, FileText, ArrowUpRight, ArrowDownRight, Trash2,
+  TrendingUp, ShoppingCart, History, List, User, ArrowUpRight, ArrowDownRight, Trash2,
   Package, Building2
 } from 'lucide-react';
 
@@ -144,6 +144,7 @@ export default function Inventory() {
           .from('inventory_movements')
           .insert([{
             product_id: editingItem.product_id,
+            warehouse_type: editingItem.warehouse_type || 'LOCAL',
             movement_type: 'Ajuste manual',
             quantity: delta,
             notes: `Ajuste manual de stock actual desde panel (${currentStock} -> ${targetStock})`,
@@ -625,15 +626,19 @@ export default function Inventory() {
                               <span style={{ color: 'var(--text-secondary)' }}>30d: <strong>{item.sales_30_days || 0}</strong> un.</span>
                             </div>
                           </td>
-                          <td>{item.estimated_daily_sales}/día</td>
                           <td style={{ fontWeight: 600 }}>
-                            <span className={`badge ${
-                              item.days_coverage === null ? 'badge-neutral' :
-                              item.days_coverage < 15 ? 'badge-danger' : 
-                              item.days_coverage < 30 ? 'badge-warning' : 'badge-success'
-                            }`}>
-                              {formatDaysCoverage(item.days_coverage)}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                              <span className={`badge ${
+                                item.days_coverage === null ? 'badge-neutral' :
+                                item.days_coverage < 15 ? 'badge-danger' : 
+                                item.days_coverage < 30 ? 'badge-warning' : 'badge-success'
+                              }`}>
+                                {formatDaysCoverage(item.days_coverage)}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 400, fontFamily: 'var(--font-mono)' }}>
+                                {item.estimated_daily_sales || 0}/día
+                              </span>
+                            </div>
                           </td>
                           <td style={{ textAlign: 'right' }}>
                             <div style={{ display: 'inline-flex', gap: '8px' }}>

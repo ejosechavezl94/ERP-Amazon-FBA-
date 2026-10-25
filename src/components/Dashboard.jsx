@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   TrendingUp, AlertTriangle, Package, ShoppingCart, 
-  CheckSquare, Receipt, RefreshCw, Calendar, Clock 
+  RefreshCw, Clock 
 } from 'lucide-react';
 import { MonthPicker } from './ui/Calendar';
 

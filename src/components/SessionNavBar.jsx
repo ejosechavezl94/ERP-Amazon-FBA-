@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   LayoutDashboard, Package, TrendingUp, Users, ShoppingCart, 
-  FileText, CheckSquare, Settings as SettingsIcon, LogOut, Sun, Moon, 
-  ChevronsUpDown, Plus, Layers, Wallet, DollarSign
+  CheckSquare, Settings as SettingsIcon, LogOut, Sun, Moon, 
+  ChevronsUpDown, Layers, Wallet, DollarSign
 } from 'lucide-react';
 
 export default function SessionNavBar({ 
@@ -14,7 +14,6 @@ export default function SessionNavBar({
   theme, 
   toggleTheme
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const accountRef = useRef(null);
 
@@ -126,7 +125,7 @@ export default function SessionNavBar({
             />
           </div>
           
-          <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: isCollapsed ? 'none' : 'flex', flexDirection: 'column' }}>
+          <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Amazon FBA ERP
             </span>
@@ -141,18 +140,16 @@ export default function SessionNavBar({
       <nav className="sidebar-menu" style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1, overflowY: 'auto' }}>
         {menuGroups.map((group, idx) => (
           <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-            {!isCollapsed && (
-              <span style={{ 
-                fontSize: '0.62rem', 
-                fontWeight: 700, 
-                color: 'var(--text-tertiary)', 
-                letterSpacing: '0.08em', 
-                padding: '4px 10px 2px 10px', 
-                textTransform: 'uppercase' 
-              }}>
-                {group.title}
-              </span>
-            )}
+            <span style={{ 
+              fontSize: '0.62rem', 
+              fontWeight: 700, 
+              color: 'var(--text-tertiary)', 
+              letterSpacing: '0.08em', 
+              padding: '4px 10px 2px 10px', 
+              textTransform: 'uppercase' 
+            }}>
+              {group.title}
+            </span>
             {group.items.map(item => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
@@ -161,7 +158,6 @@ export default function SessionNavBar({
                   key={item.id}
                   className={`menu-item ${isActive ? 'active' : ''}`}
                   onClick={() => setCurrentTab(item.id)}
-                  title={isCollapsed ? item.label : undefined}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -183,7 +179,7 @@ export default function SessionNavBar({
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon size={17} style={{ flexShrink: 0, opacity: isActive ? 1 : 0.8 }} />
                   </div>
-                  <span className="sidebar-text-container" style={{ display: isCollapsed ? 'none' : 'inline', fontSize: '0.86rem', fontWeight: isActive ? 600 : 500, whiteSpace: 'nowrap' }}>
+                  <span className="sidebar-text-container" style={{ display: 'inline', fontSize: '0.86rem', fontWeight: isActive ? 600 : 500, whiteSpace: 'nowrap' }}>
                     {item.label}
                   </span>
                 </button>
@@ -217,7 +213,7 @@ export default function SessionNavBar({
           }}
         >
           <SettingsIcon size={18} style={{ flexShrink: 0 }} />
-          <span className="sidebar-text-container" style={{ display: isCollapsed ? 'none' : 'inline', fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
+          <span className="sidebar-text-container" style={{ display: 'inline', fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'nowrap' }}>
             Configuración
           </span>
         </button>
@@ -225,7 +221,7 @@ export default function SessionNavBar({
         {/* Profile Card / Dropdown */}
         <div style={{ position: 'relative' }} ref={accountRef}>
           <button 
-            onClick={() => !isCollapsed && setAccountDropdownOpen(!accountDropdownOpen)}
+            onClick={() => setAccountDropdownOpen(!accountDropdownOpen)}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -234,7 +230,7 @@ export default function SessionNavBar({
               width: '100%',
               border: 'none',
               background: 'none',
-              cursor: !isCollapsed ? 'pointer' : 'default',
+              cursor: 'pointer',
               borderRadius: 'var(--border-radius)',
               textAlign: 'left'
             }}
@@ -256,7 +252,7 @@ export default function SessionNavBar({
               {getUserInitials()}
             </div>
             
-            <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: isCollapsed ? 'none' : 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {profile?.full_name || 'Mi Perfil'}
@@ -270,7 +266,7 @@ export default function SessionNavBar({
           </button>
 
           {/* Account Dropdown Menu */}
-          {accountDropdownOpen && !isCollapsed && (
+          {accountDropdownOpen && (
             <div className="sidebar-dropdown" style={{ bottom: '48px', left: '8px', width: '224px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px' }}>
                 <div className="user-avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-color)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: '0.85rem' }}>

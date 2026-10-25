@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
-  Shield, KeyRound, Check, RefreshCw, QrCode, Copy, Trash2, AlertCircle, 
-  ExternalLink, Lock, CheckCircle2, ShoppingCart, Package, Bell, FileText, Globe, 
-  ArrowRight, Zap, AlertTriangle
+  Shield, KeyRound, Check, RefreshCw, Copy, Trash2, AlertCircle, 
+  ExternalLink, Lock, CheckCircle2, ShoppingCart, Package, Bell, FileText, 
+  Zap
 } from 'lucide-react';
 
 export default function Settings({ profile, onProfileUpdate }) {
