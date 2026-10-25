@@ -130,142 +130,48 @@ export function calculateFbaUnitMetrics({ price = 0, cost = 0, fbaFee = 0, refer
 }
 
 /**
- * Simulador de sincronización oficial SP-API para pruebas antes de activar el Plan Profesional.
- * Si el usuario ya tiene productos en su catálogo, enriquece sus datos FBA (FNSKU, Tarifas FBA,
- * desglose de inventario FBA) usando la estructura exacta de respuesta de Amazon SP-API.
- * Si el catálogo está vacío, crea un SKU de demostración 100% FBA completo.
+ * Simulador 100% en memoria de sincronización oficial SP-API.
+ * NUNCA escribe, modifica ni borra datos en las tablas reales de Supabase.
+ * Genera el payload oficial de `GET /fba/inventory/v1/summaries` y su mapeo
+ * exclusivamente en memoria para fines de verificación técnica.
  */
-export async function runSpApiSimulation(supabase) {
+export async function runSpApiSimulation() {
   const nowIso = new Date().toISOString();
 
-  const { data: existingProducts, error: prodErr } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: true });
-
-  if (prodErr) throw prodErr;
-
-  let targetProducts = existingProducts || [];
-
-  // Si no hay productos aún, creamos un producto FBA de prueba realista
-  if (targetProducts.length === 0) {
-    const demoProduct = {
-      sku_internal: 'FBA-PRO-001',
-      sku_amazon: 'AMZ-FBA-PRO-001',
-      asin_amazon: 'B09X7K2M9P',
-      fnsku: 'X001FBA992',
-      ean_code: '8437000000012',
-      name: 'Soporte Magnético MagSafe Aluminio Aeroespacial (Demo SP-API)',
-      brand: 'PrimeGear FBA',
-      status: 'Active',
-      cost_manufacturing: 5.80,
-      cost_shipping: 0.70,
-      target_price: 29.99,
-      fba_fee: 4.15,
-      referral_fee_pct: 15.0,
-      buy_box_winner: true,
-      spapi_last_sync: nowIso,
-      notes: 'Producto sincronizado mediante simulador de estructura oficial Amazon SP-API'
-    };
-
-    const { data: inserted, error: insertErr } = await supabase
-      .from('products')
-      .insert([demoProduct])
-      .select();
-
-    if (insertErr) throw insertErr;
-    targetProducts = inserted || [];
-  }
-
-  const syncedSummaries = [];
-
-  for (let i = 0; i < targetProducts.length; i++) {
-    const p = targetProducts[i];
-    const generatedFnsku = p.fnsku || `X001FBA${String(100 + i).slice(-3)}`;
-    const generatedAsin = p.asin_amazon || `B09FBA0${100 + i}`;
-    const generatedFbaFee = Number(p.fba_fee) > 0 ? Number(p.fba_fee) : 3.85;
-    const generatedRefPct = Number(p.referral_fee_pct) > 0 ? Number(p.referral_fee_pct) : 15.0;
-
-    //Actualizar metadatos FBA del producto
-    await supabase
-      .from('products')
-      .update({
-        fnsku: generatedFnsku,
-        asin_amazon: generatedAsin,
-        sku_amazon: p.sku_amazon || p.sku_internal,
-        fba_fee: generatedFbaFee,
-        referral_fee_pct: generatedRefPct,
-        buy_box_winner: true,
-        spapi_last_sync: nowIso
-      })
-      .eq('id', p.id);
-
-    // Verificar estado actual de inventario para no sobrescribir stock real si ya tiene unidades
-    const { data: invRows } = await supabase
-      .from('inventory')
-      .select('*')
-      .eq('product_id', p.id)
-      .eq('warehouse_type', 'FBA')
-      .limit(1);
-
-    const currentInv = invRows && invRows[0];
-    const hasExistingStock = currentInv && (currentInv.stock_current > 0 || currentInv.stock_in_transit > 0);
-
-    // Payload oficial simulado de GET /fba/inventory/v1/summaries
-    const mockSpApiSummary = {
-      asin: generatedAsin,
-      fnSku: generatedFnsku,
-      sellerSku: p.sku_amazon || p.sku_internal,
-      productName: p.name,
-      condition: 'NewItem',
-      lastUpdatedTime: nowIso,
-      inventoryDetails: {
-        fulfillableQuantity: hasExistingStock ? Math.max(0, currentInv.stock_current - currentInv.stock_reserved) : 140,
-        inboundWorkingQuantity: 0,
-        inboundShippedQuantity: hasExistingStock ? currentInv.stock_in_transit : 50,
-        inboundReceivingQuantity: 0,
-        reservedQuantity: {
-          totalReservedQuantity: hasExistingStock ? currentInv.stock_reserved : 8,
-          pendingCustomerOrderQuantity: hasExistingStock ? currentInv.stock_reserved : 6,
-          pendingTransshipmentQuantity: 2,
-          fcProcessingQuantity: 0
-        },
-        unfulfillableQuantity: {
-          totalUnfulfillableQuantity: currentInv?.stock_unfulfillable || 2,
-          customerDamagedQuantity: 1,
-          warehouseDamagedQuantity: 1
-        }
+  // Payload oficial simulado de GET /fba/inventory/v1/summaries (solo en memoria)
+  const mockSpApiSummary = {
+    asin: 'B09X7K2M9P',
+    fnSku: 'X001FBA992',
+    sellerSku: 'FBA-DEMO-MEM-001',
+    productName: 'Producto de Prueba en Memoria (Simulación Sin Efectos Reales)',
+    condition: 'NewItem',
+    lastUpdatedTime: nowIso,
+    inventoryDetails: {
+      fulfillableQuantity: 140,
+      inboundWorkingQuantity: 0,
+      inboundShippedQuantity: 50,
+      inboundReceivingQuantity: 0,
+      reservedQuantity: {
+        totalReservedQuantity: 8,
+        pendingCustomerOrderQuantity: 6,
+        pendingTransshipmentQuantity: 2,
+        fcProcessingQuantity: 0
+      },
+      unfulfillableQuantity: {
+        totalUnfulfillableQuantity: 2,
+        customerDamagedQuantity: 1,
+        warehouseDamagedQuantity: 1
       }
-    };
-
-    const mapped = mapSpApiInventorySummaryToDb(mockSpApiSummary);
-
-    if (currentInv) {
-      await supabase
-        .from('inventory')
-        .update({
-          ...mapped.inventoryPatch,
-          stock_min: currentInv.stock_min > 0 ? currentInv.stock_min : 25
-        })
-        .eq('id', currentInv.id);
-    } else {
-      await supabase
-        .from('inventory')
-        .insert([{
-          product_id: p.id,
-          ...mapped.inventoryPatch,
-          stock_min: 25
-        }]);
     }
+  };
 
-    syncedSummaries.push(mockSpApiSummary);
-  }
-
-  localStorage.setItem('amazon_spapi_last_sync', nowIso);
+  const mapped = mapSpApiInventorySummaryToDb(mockSpApiSummary);
 
   return {
-    syncedCount: syncedSummaries.length,
+    syncedCount: 1,
+    isInMemoryOnly: true,
     timestamp: nowIso,
-    samplePayload: syncedSummaries[0] || null
+    samplePayload: mockSpApiSummary,
+    mappedDbPreview: mapped
   };
 }

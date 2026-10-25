@@ -15,6 +15,7 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [syncingSpApi, setSyncingSpApi] = useState(false);
+  const [simulatedPreview, setSimulatedPreview] = useState(null);
   const [search, setSearch] = useState('');
   
   // Modals state
@@ -118,11 +119,15 @@ export default function Inventory() {
   };
 
   const handleSimulateSpApi = async () => {
+    const confirmed = window.confirm(
+      'AVISO DE SIMULACIÓN: Esta es una simulación solo en memoria y sin efectos reales. No creará, modificará ni borrará ningún dato en las tablas reales de Supabase.\n\n¿Deseas ejecutar la simulación en memoria?'
+    );
+    if (!confirmed) return;
+
     setSyncingSpApi(true);
     try {
-      await runSpApiSimulation(supabase);
-      await fetchInventory();
-      await fetchProducts();
+      const res = await runSpApiSimulation();
+      setSimulatedPreview(res);
     } catch (err) {
       alert(err.message || 'Error en sincronización de prueba SP-API');
     } finally {
@@ -401,6 +406,45 @@ export default function Inventory() {
 
       {activeTab === 'inventory' ? (
         <>
+          {simulatedPreview?.samplePayload && (
+            <div style={{
+              marginBottom: '20px',
+              padding: '14px 18px',
+              borderRadius: '14px',
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={16} style={{ color: '#f59e0b' }} />
+                  <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                    Simulación en Memoria SP-API (Sin efectos reales: ningún dato fue escrito en Supabase)
+                  </strong>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setSimulatedPreview(null)}
+                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                >
+                  Cerrar vista previa
+                </button>
+              </div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <span>SKU: <strong>{simulatedPreview.samplePayload.sellerSku}</strong></span>
+                <span>ASIN: <strong>{simulatedPreview.samplePayload.asin}</strong></span>
+                <span>FNSKU: <strong>{simulatedPreview.samplePayload.fnSku}</strong></span>
+                <span>Fulfillable: <strong>{simulatedPreview.samplePayload.inventoryDetails.fulfillableQuantity} uds</strong></span>
+                <span>Reservado: <strong>{simulatedPreview.samplePayload.inventoryDetails.reservedQuantity.totalReservedQuantity} uds</strong></span>
+                <span>Inbound: <strong>{simulatedPreview.samplePayload.inventoryDetails.inboundShippedQuantity} uds</strong></span>
+                <span>No Apto: <strong>{simulatedPreview.samplePayload.inventoryDetails.unfulfillableQuantity.totalUnfulfillableQuantity} uds</strong></span>
+              </div>
+            </div>
+          )}
+
           {/* Search, FBA Badge and Alert Indicators */}
           <div style={{ 
             display: 'flex', 

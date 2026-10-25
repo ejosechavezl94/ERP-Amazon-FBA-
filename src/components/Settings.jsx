@@ -161,13 +161,22 @@ export default function Settings({ profile, onProfileUpdate }) {
     }
   };
 
+  const isRealSpApiAppId = (rawValue) => {
+    const val = (rawValue || '').trim();
+    if (!val) return false;
+    if (val === 'amzn1.sp.solution.00000000-0000-0000-0000-000000000000') return false;
+    if (val.toLowerCase() === 'amzn1.sp.solution.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx') return false;
+    if (/^amzn1\.sp\.solution\.[0x-]+$/i.test(val)) return false;
+    return val.startsWith('amzn1.sp.solution.') && val.length > 'amzn1.sp.solution.'.length + 8;
+  };
+
   const handleStartOAuth = (e) => {
     if (e) e.preventDefault();
     setSpapiError('');
     setSpapiMessage('');
 
-    if (!spapiAppId.trim()) {
-      setSpapiError('Por favor introduce el Application ID (App ID) de tu aplicación privada en Amazon Seller Central.');
+    if (!isRealSpApiAppId(spapiAppId)) {
+      setSpapiError('Falta un App ID real de SP-API. Consíguelo en Seller Central > Develop Apps');
       return;
     }
 
@@ -184,8 +193,8 @@ export default function Settings({ profile, onProfileUpdate }) {
   };
 
   const handleConfirmAuthorization = () => {
-    if (!spapiAppId.trim()) {
-      setSpapiError('Debes ingresar tu Application ID antes de marcar la conexión como autorizada.');
+    if (!isRealSpApiAppId(spapiAppId)) {
+      setSpapiError('Falta un App ID real de SP-API. Consíguelo en Seller Central > Develop Apps');
       return;
     }
     localStorage.setItem('amazon_spapi_app_id', spapiAppId.trim());
@@ -205,13 +214,18 @@ export default function Settings({ profile, onProfileUpdate }) {
   };
 
   const handleRunSimulation = async () => {
+    const confirmed = window.confirm(
+      'AVISO DE SIMULACIÓN: Esta prueba se ejecuta 100% en memoria y NO tiene efectos reales. No escribirá, modificará ni borrará ningún producto ni inventario en tu base de datos de Supabase.\n\n¿Deseas ver la simulación de respuesta de Amazon SP-API?'
+    );
+    if (!confirmed) return;
+
     setSimulatingSpApi(true);
     setSpapiError('');
     setSpapiMessage('');
     try {
-      const res = await runSpApiSimulation(supabase);
+      const res = await runSpApiSimulation();
       setSimResult(res);
-      setSpapiMessage(`¡Prueba SP-API completada! Se sincronizaron ${res.syncedCount} SKU(s) con datos de FNSKU, tarifas FBA y desglose de inventario FBA.`);
+      setSpapiMessage('Simulación en memoria completada (sin efectos reales: ningún dato fue escrito ni modificado en Supabase).');
     } catch (err) {
       setSpapiError(err.message || 'Error al ejecutar simulación SP-API');
     } finally {
@@ -542,13 +556,17 @@ export default function Settings({ profile, onProfileUpdate }) {
                 </span>
               </div>
 
-              <form onSubmit={handleStartOAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <form onSubmit={handleStartOAuth} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="form-group">
                   <label className="form-label">Región / Marketplace de Seller Central *</label>
                   <select 
                     className="form-select" 
                     value={spapiRegion}
-                    onChange={(e) => setSpapiRegion(e.target.value)}
+                    onChange={(e) => {
+                      const nextRegion = e.target.value;
+                      setSpapiRegion(nextRegion);
+                      localStorage.setItem('amazon_spapi_region', nextRegion);
+                    }}
                   >
                     <option value="sellercentral.amazon.es">Amazon Europa (España, Alemania, Francia, Italia, Reino Unido)</option>
                     <option value="sellercentral.amazon.com">Amazon Norteamérica (Estados Unidos, México, Canadá)</option>
@@ -639,7 +657,7 @@ export default function Settings({ profile, onProfileUpdate }) {
                   </h3>
                 </div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Tu base de datos ya tiene configuradas todas las columnas oficiales de Amazon FBA. Puedes probar el flujo completo ahora mismo antes de activar el Plan Profesional.
+                  Simulación 100% en memoria sin efectos reales: verifica el mapeo de campos de Amazon SP-API sin escribir ni modificar ningún dato en Supabase.
                 </span>
               </div>
               <button
@@ -650,7 +668,7 @@ export default function Settings({ profile, onProfileUpdate }) {
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }}
               >
                 <RefreshCw size={14} className={simulatingSpApi ? 'animate-spin' : ''} />
-                {simulatingSpApi ? 'Sincronizando Payload FBA...' : 'Probar Flujo SP-API Ahora'}
+                {simulatingSpApi ? 'Simulando en Memoria...' : 'Probar Flujo SP-API Ahora'}
               </button>
             </div>
 
@@ -696,7 +714,7 @@ export default function Settings({ profile, onProfileUpdate }) {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10b981' }}>
-                    ✓ Payload Oficial Amazon SP-API (`InventorySummary`) Procesado e Insertado en Supabase:
+                    ✓ Payload Oficial Amazon SP-API (`InventorySummary`) Simulado en Memoria (Sin escritura en Supabase):
                   </span>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                     {new Date(simResult.timestamp).toLocaleTimeString('es-ES')}
