@@ -15,6 +15,7 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [syncingSpApi, setSyncingSpApi] = useState(false);
+  const [showSimConfirm, setShowSimConfirm] = useState(false);
   const [simulatedPreview, setSimulatedPreview] = useState(null);
   const [search, setSearch] = useState('');
   
@@ -118,12 +119,13 @@ export default function Inventory() {
     setIsEditModalOpen(true);
   };
 
-  const handleSimulateSpApi = async () => {
-    const confirmed = window.confirm(
-      'AVISO DE SIMULACIÓN: Esta es una simulación solo en memoria y sin efectos reales. No creará, modificará ni borrará ningún dato en las tablas reales de Supabase.\n\n¿Deseas ejecutar la simulación en memoria?'
-    );
-    if (!confirmed) return;
+  const handleSimulateSpApi = () => {
+    setActiveTab('inventory');
+    setShowSimConfirm(true);
+  };
 
+  const handleConfirmSimulateSpApi = async () => {
+    setShowSimConfirm(false);
     setSyncingSpApi(true);
     try {
       const res = await runSpApiSimulation();
@@ -406,34 +408,83 @@ export default function Inventory() {
 
       {activeTab === 'inventory' ? (
         <>
+          {showSimConfirm && (
+            <div
+              className="alert-banner alert-banner-warning"
+              style={{
+                marginBottom: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '10px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                whiteSpace: 'normal',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%' }}>
+                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>
+                  <strong>Aviso antes de ejecutar:</strong> Esta es una simulación sin efectos reales. Usa datos solo en memoria y <strong>NUNCA escribe, modifica ni borra datos</strong> en las tablas reales de Supabase (<code>public.products</code>, <code>public.inventory</code>, <code>public.sales</code>, <code>public.purchase_orders</code>).
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleConfirmSimulateSpApi}
+                  disabled={syncingSpApi}
+                >
+                  Confirmar Simulación Sin Efectos Reales
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setShowSimConfirm(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
           {simulatedPreview?.samplePayload && (
             <div style={{
               marginBottom: '20px',
               padding: '14px 18px',
               borderRadius: '14px',
-              background: 'rgba(245, 158, 11, 0.08)',
-              border: '1px solid rgba(245, 158, 11, 0.35)',
+              background: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px'
+              gap: '8px',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              whiteSpace: 'normal',
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Zap size={16} style={{ color: '#f59e0b' }} />
-                  <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                    Simulación en Memoria SP-API (Sin efectos reales: ningún dato fue escrito en Supabase)
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: '1 1 260px' }}>
+                  <Zap size={16} style={{ color: '#10b981', flexShrink: 0 }} />
+                  <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                    ✓ Simulación SP-API en memoria completada con éxito (Sin efectos reales: ningún dato fue escrito ni modificado en Supabase)
                   </strong>
                 </div>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
                   onClick={() => setSimulatedPreview(null)}
-                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                  style={{ padding: '4px 10px', fontSize: '0.75rem', flexShrink: 0 }}
                 >
                   Cerrar vista previa
                 </button>
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', display: 'flex', gap: '16px', flexWrap: 'wrap', lineHeight: 1.5 }}>
                 <span>SKU: <strong>{simulatedPreview.samplePayload.sellerSku}</strong></span>
                 <span>ASIN: <strong>{simulatedPreview.samplePayload.asin}</strong></span>
                 <span>FNSKU: <strong>{simulatedPreview.samplePayload.fnSku}</strong></span>

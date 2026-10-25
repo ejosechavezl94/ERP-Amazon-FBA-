@@ -11,6 +11,7 @@ export default function Settings({ profile, onProfileUpdate }) {
   const [activeTab, setActiveTab] = useState('amazon'); // 'amazon' | 'profile'
   const [loading, setLoading] = useState(false);
   const [simulatingSpApi, setSimulatingSpApi] = useState(false);
+  const [showSimConfirm, setShowSimConfirm] = useState(false);
   const [simResult, setSimResult] = useState(null);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [profileMessage, setProfileMessage] = useState('');
@@ -213,19 +214,20 @@ export default function Settings({ profile, onProfileUpdate }) {
     setSpapiMessage('Integración desconectada con éxito.');
   };
 
-  const handleRunSimulation = async () => {
-    const confirmed = window.confirm(
-      'AVISO DE SIMULACIÓN: Esta prueba se ejecuta 100% en memoria y NO tiene efectos reales. No escribirá, modificará ni borrará ningún producto ni inventario en tu base de datos de Supabase.\n\n¿Deseas ver la simulación de respuesta de Amazon SP-API?'
-    );
-    if (!confirmed) return;
+  const handleRequestSimulation = () => {
+    setSpapiError('');
+    setShowSimConfirm(true);
+  };
 
+  const handleRunSimulation = async () => {
+    setShowSimConfirm(false);
     setSimulatingSpApi(true);
     setSpapiError('');
     setSpapiMessage('');
     try {
       const res = await runSpApiSimulation();
       setSimResult(res);
-      setSpapiMessage('Simulación en memoria completada (sin efectos reales: ningún dato fue escrito ni modificado en Supabase).');
+      setSpapiMessage('Simulación en memoria completada con éxito: esta es una simulación sin efectos reales y ningún dato fue escrito ni modificado en las tablas reales de Supabase.');
     } catch (err) {
       setSpapiError(err.message || 'Error al ejecutar simulación SP-API');
     } finally {
@@ -311,7 +313,7 @@ export default function Settings({ profile, onProfileUpdate }) {
       </div>
 
       {activeTab === 'amazon' ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', minWidth: 0, width: '100%', maxWidth: '100%' }}>
           {/* Honest UI: Sales notification disclosure */}
           <div style={{ 
             padding: '16px 20px', 
@@ -611,6 +613,11 @@ export default function Settings({ profile, onProfileUpdate }) {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {spapiError && (
+                    <div className="alert-banner alert-banner-danger" style={{ marginBottom: 0 }}>
+                      {spapiError}
+                    </div>
+                  )}
                   <button 
                     type="submit" 
                     className="btn btn-primary" 
@@ -647,32 +654,99 @@ export default function Settings({ profile, onProfileUpdate }) {
           </div>
 
           {/* SP-API Technical Mapping & Pre-Production Simulator */}
-          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Package size={18} style={{ color: 'var(--accent-color)' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, flex: '1 1 280px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <Package size={18} style={{ color: 'var(--accent-color)', flexShrink: 0 }} />
                   <h3 className="card-title" style={{ margin: 0, fontSize: '1.05rem' }}>
                     Arquitectura de Datos SP-API (100% FBA) & Simulador de Pruebas
                   </h3>
                 </div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
                   Simulación 100% en memoria sin efectos reales: verifica el mapeo de campos de Amazon SP-API sin escribir ni modificar ningún dato en Supabase.
                 </span>
               </div>
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                onClick={handleRunSimulation}
+                onClick={handleRequestSimulation}
                 disabled={simulatingSpApi}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '10px', flexShrink: 0 }}
               >
                 <RefreshCw size={14} className={simulatingSpApi ? 'animate-spin' : ''} />
                 {simulatingSpApi ? 'Simulando en Memoria...' : 'Probar Flujo SP-API Ahora'}
               </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+            {/* Pre-execution simulation notice (always visible + highlighted confirmation step) */}
+            <div
+              className="alert-banner alert-banner-warning"
+              style={{
+                marginBottom: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '10px',
+                width: '100%',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                whiteSpace: 'normal',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', width: '100%' }}>
+                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                <span style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>
+                  <strong>Aviso importante:</strong> Esta es una simulación sin efectos reales. Usa datos solo en memoria y <strong>NUNCA escribe, modifica ni borra datos</strong> en las tablas reales de Supabase (<code>public.products</code>, <code>public.inventory</code>, <code>public.sales</code>, <code>public.purchase_orders</code>).
+                </span>
+              </div>
+              {showSimConfirm && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', width: '100%', paddingTop: '8px', borderTop: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                  <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                    ¿Confirmas ejecutar esta simulación en memoria (sin efectos reales en la base de datos)?
+                  </strong>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={handleRunSimulation}
+                      disabled={simulatingSpApi}
+                    >
+                      Confirmar Simulación Sin Efectos Reales
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setShowSimConfirm(false)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {simResult?.samplePayload && (
+              <div
+                className="alert-banner alert-banner-success"
+                style={{
+                  marginBottom: 0,
+                  width: '100%',
+                  maxWidth: '100%',
+                  boxSizing: 'border-box',
+                  whiteSpace: 'normal',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.5
+                }}
+              >
+                ✓ Simulación SP-API en memoria completada con éxito: se verificó el mapeo oficial de Amazon FBA (FNSKU, ASIN, tarifas FBA y desglose de stock) sin escribir ni modificar ningún dato en las tablas reales de Supabase.
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '12px', width: '100%', maxWidth: '100%', minWidth: 0 }}>
               {SPAPI_ENDPOINTS_SPEC.map(spec => (
                 <div
                   key={spec.id}
@@ -683,21 +757,25 @@ export default function Settings({ profile, onProfileUpdate }) {
                     border: '1px solid var(--border-color)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px'
+                    gap: '6px',
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden'
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-                    <strong style={{ fontSize: '0.84rem', color: 'var(--text-primary)' }}>{spec.name}</strong>
-                    <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
+                    <strong style={{ fontSize: '0.84rem', color: 'var(--text-primary)', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{spec.name}</strong>
+                    <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700, flexShrink: 0 }}>
                       {spec.targetTable}
                     </span>
                   </div>
-                  <code style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
+                  <code style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word', display: 'block' }}>
                     {spec.endpoint}
                   </code>
-                  <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', fontSize: '0.73rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                  <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', fontSize: '0.73rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0, maxWidth: '100%' }}>
                     {spec.fieldsMapped.map((f, i) => (
-                      <li key={i} style={{ fontFamily: 'var(--font-mono)' }}>{f}</li>
+                      <li key={i} style={{ fontFamily: 'var(--font-mono)', whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word', lineHeight: 1.45 }}>{f}</li>
                     ))}
                   </ul>
                 </div>
@@ -710,13 +788,16 @@ export default function Settings({ profile, onProfileUpdate }) {
                 padding: '12px 14px',
                 borderRadius: '12px',
                 backgroundColor: 'var(--bg-primary)',
-                border: '1px solid rgba(16, 185, 129, 0.35)'
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                minWidth: 0,
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10b981' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px', minWidth: 0 }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10b981', whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
                     ✓ Payload Oficial Amazon SP-API (`InventorySummary`) Simulado en Memoria (Sin escritura en Supabase):
                   </span>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', flexShrink: 0 }}>
                     {new Date(simResult.timestamp).toLocaleTimeString('es-ES')}
                   </span>
                 </div>
@@ -725,8 +806,12 @@ export default function Settings({ profile, onProfileUpdate }) {
                   fontSize: '0.72rem',
                   fontFamily: 'var(--font-mono)',
                   color: 'var(--text-secondary)',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'anywhere',
+                  wordBreak: 'break-word',
                   overflowX: 'auto',
-                  maxHeight: '200px'
+                  maxHeight: '200px',
+                  maxWidth: '100%'
                 }}>
                   {JSON.stringify(simResult.samplePayload, null, 2)}
                 </pre>
