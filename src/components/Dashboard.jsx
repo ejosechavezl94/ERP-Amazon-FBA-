@@ -162,26 +162,26 @@ export default function Dashboard({ onNavigate }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', minWidth: 0 }}>
       {/* Header with Title and Global Actions */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: 0 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <h1 className="page-title" style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Resumen Ejecutivo FBA</h1>
-            <span className="badge badge-success" style={{ fontSize: '0.68rem', padding: '3px 8px', letterSpacing: '0.05em', fontWeight: 700 }}>EN VIVO</span>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: 0 }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
+            <h1 className="page-title" style={{ margin: 0, fontSize: 'clamp(1.35rem, 4vw, 1.75rem)', fontWeight: 800, letterSpacing: '-0.03em' }}>Resumen Ejecutivo FBA</h1>
+            <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '2px 8px', letterSpacing: '0.05em', fontWeight: 700, flexShrink: 0 }}>EN VIVO</span>
           </div>
-          <p className="page-subtitle" style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          <p className="page-subtitle" style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
             Consola centralizada de ventas, inventario local/FBA y aprovisionamiento
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="dashboard-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start' }}>
           <MonthPicker value={mes} onChange={setMes} />
           <button 
             className="btn btn-secondary btn-sm" 
             onClick={fetchDashboardData}
             title="Actualizar datos del panel"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', height: '36px', whiteSpace: 'nowrap' }}
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 
             <span>Actualizar</span>
@@ -189,7 +189,7 @@ export default function Dashboard({ onNavigate }) {
           <button 
             className="btn btn-primary btn-sm" 
             onClick={() => onNavigate('orders')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, height: '36px', whiteSpace: 'nowrap' }}
           >
             <ShoppingCart size={14} /> 
             <span>Nuevo Pedido PO</span>
@@ -198,127 +198,127 @@ export default function Dashboard({ onNavigate }) {
       </div>
 
       {/* Hero Metrics KPI Cards (4 Grid) */}
-      <div className="grid-cols-4" style={{ gap: '16px' }}>
+      <div className="grid-cols-4" style={{ gap: '12px', marginBottom: 0 }}>
         
         {/* Metric 1: Ventas del Mes */}
-        <div className="card metric-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '4px solid #10b981' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="metric-label" style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              Ventas del Mes ({mes})
+        <div className="card metric-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+              Ventas ({mes})
             </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--success-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <TrendingUp size={18} style={{ color: '#10b981' }} />
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'var(--success-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <TrendingUp size={15} style={{ color: '#10b981' }} />
             </div>
           </div>
           <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {formatCurrency(metrics.totalSalesMonth)}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              Volumen de unidades:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Volumen:
             </span>
-            <span className="badge badge-success" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-              {metrics.totalSalesMonthUnits} uds vendidas
+            <span className="badge badge-success" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.68rem', padding: '1px 6px' }}>
+              {metrics.totalSalesMonthUnits} uds
             </span>
           </div>
         </div>
 
         {/* Metric 2: Valor Total de Inventario */}
-        <div className="card metric-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '4px solid var(--accent-color)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="metric-label" style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              Valor Total Inventario
+        <div className="card metric-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+              Valor Inventario
             </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Package size={18} style={{ color: 'var(--accent-color)' }} />
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Package size={15} style={{ color: 'var(--accent-color)' }} />
             </div>
           </div>
           <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {formatCurrency(metrics.totalInventoryValue)}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              Ubicación de stock:
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
             <button 
               onClick={() => onNavigate('inventory')} 
-              style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+              style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0, textAlign: 'left' }}
             >
-              Ver desglose Local / FBA →
+              Local / FBA →
             </button>
           </div>
         </div>
 
         {/* Metric 3: Alertas de Stock Bajo / Reposición */}
         <div className="card metric-card" style={{ 
-          padding: '18px 20px', 
+          padding: '16px', 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: '12px', 
-          borderLeft: metrics.lowStockCount > 0 ? '4px solid var(--danger-color)' : '4px solid var(--success-color)',
-          backgroundColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.03)' : 'var(--bg-secondary)'
+          justifyContent: 'space-between',
+          gap: '10px', 
+          minWidth: 0,
+          borderColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.35)' : 'var(--border-color)',
+          backgroundColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-secondary)'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="metric-label" style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              Stock Bajo Mínimo
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+              Stock Bajo
             </span>
             <div style={{ 
-              width: '32px', 
-              height: '32px', 
+              width: '28px', 
+              height: '28px', 
               borderRadius: '8px', 
               backgroundColor: metrics.lowStockCount > 0 ? 'var(--danger-light)' : 'var(--success-light)', 
               display: 'flex', 
               alignItems: 'center', 
-              justifyContent: 'center' 
+              justifyContent: 'center',
+              flexShrink: 0
             }}>
-              <AlertTriangle size={18} style={{ color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--success-color)' }} />
+              <AlertTriangle size={15} style={{ color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--success-color)' }} />
             </div>
           </div>
           <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.85rem', fontWeight: 800, color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-primary)', letterSpacing: '-0.04em' }}>
-              {metrics.lowStockCount} {metrics.lowStockCount === 1 ? 'producto' : 'productos'}
+            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {metrics.lowStockCount} {metrics.lowStockCount === 1 ? 'SKU' : 'SKUs'}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.78rem', color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-secondary)', fontWeight: 500 }}>
-              {metrics.lowStockCount > 0 ? 'Requiere reorden a proveedor' : 'Nivel de stock óptimo'}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+            <span style={{ fontSize: '0.72rem', color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-secondary)', fontWeight: 500 }}>
+              {metrics.lowStockCount > 0 ? 'Reordenar' : 'Stock óptimo'}
             </span>
             {metrics.lowStockCount > 0 && (
               <button 
                 onClick={() => onNavigate('inventory')}
                 className="btn btn-secondary btn-sm"
-                style={{ padding: '2px 8px', fontSize: '0.72rem', height: '24px' }}
+                style={{ padding: '2px 8px', fontSize: '0.68rem', height: '22px' }}
               >
-                Revisar
+                Ver
               </button>
             )}
           </div>
         </div>
 
         {/* Metric 4: Pedidos PO Activos */}
-        <div className="card metric-card" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px', borderLeft: '4px solid var(--info-color)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="metric-label" style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-              Pedidos PO Activos
+        <div className="card metric-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+              POs Activos
             </span>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(14, 165, 233, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShoppingCart size={18} style={{ color: 'var(--info-color)' }} />
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <ShoppingCart size={15} style={{ color: 'var(--info-color)' }} />
             </div>
           </div>
           <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {metrics.activeOrdersCount} {metrics.activeOrdersCount === 1 ? 'pedido' : 'pedidos'}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              Costo total en camino:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Tránsito:
             </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 700, color: 'var(--info-color)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', fontWeight: 700, color: 'var(--info-color)' }}>
               {formatCurrency(metrics.recentExpenses)}
             </span>
           </div>
@@ -329,7 +329,7 @@ export default function Dashboard({ onNavigate }) {
       {/* FBA Health & Critical Alerts Banner */}
       {alerts.length > 0 && (
         <div style={{ 
-          padding: '16px 20px', 
+          padding: '16px', 
           borderRadius: 'var(--border-radius-lg)', 
           backgroundColor: 'rgba(239, 68, 68, 0.04)', 
           border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -337,89 +337,91 @@ export default function Dashboard({ onNavigate }) {
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '12px'
+          gap: '12px',
+          minWidth: 0,
+          maxWidth: '100%'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ padding: '8px', borderRadius: '50%', backgroundColor: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+            <div style={{ padding: '8px', borderRadius: '50%', backgroundColor: 'var(--danger-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <AlertTriangle size={18} style={{ color: 'var(--danger-color)' }} />
             </div>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Radar de Alertas Operativas ({alerts.length})
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px', wordBreak: 'break-word' }}>
                 {alerts[0].message}
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button 
               className="btn btn-secondary btn-sm" 
               onClick={() => onNavigate('inventory')}
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.78rem', whiteSpace: 'nowrap' }}
             >
               Ver Inventario
             </button>
             <button 
               className="btn btn-primary btn-sm" 
               onClick={() => onNavigate('orders')}
-              style={{ fontSize: '0.78rem', backgroundColor: 'var(--danger-color)', borderColor: 'var(--danger-color)' }}
+              style={{ fontSize: '0.78rem', backgroundColor: 'var(--danger-color)', borderColor: 'var(--danger-color)', color: '#fff', whiteSpace: 'nowrap' }}
             >
-              Crear Orden de Compra
+              Crear Orden PO
             </button>
           </div>
         </div>
       )}
 
       {/* Main Operational Grid (2 Columns) */}
-      <div className="grid-cols-2" style={{ gap: '20px' }}>
+      <div className="grid-cols-2" style={{ gap: '16px', marginBottom: 0 }}>
         
         {/* Column 1: Recent Purchase Orders */}
-        <div className="card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 className="card-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Pedidos de Compra Recientes</h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Últimas órdenes a proveedores registrados</p>
+        <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Pedidos de Compra Recientes</h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>Últimas órdenes a proveedores registrados</p>
             </div>
             <button 
               className="btn btn-secondary btn-sm" 
               onClick={() => onNavigate('orders')}
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               Ver todos →
             </button>
           </div>
 
           {recentPO.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+            <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
               No hay pedidos de compra registrados recientemente.
             </div>
           ) : (
-            <div className="table-container" style={{ borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-              <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="table-container" style={{ borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-color)', overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
+              <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '420px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)' }}>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.72rem', fontWeight: 700 }}>PO Nº</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.72rem', fontWeight: 700 }}>PRODUCTO</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.72rem', fontWeight: 700 }}>PROVEEDOR</th>
-                    <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: '0.72rem', fontWeight: 700 }}>ESTADO</th>
-                    <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '0.72rem', fontWeight: 700 }}>COSTO</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>PO Nº</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>PRODUCTO</th>
+                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>PROVEEDOR</th>
+                    <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>ESTADO</th>
+                    <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>COSTO</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentPO.map(po => (
                     <tr key={po.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem' }}>
+                      <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                         PO-{po.order_number}
                       </td>
-                      <td style={{ padding: '10px 12px', fontSize: '0.82rem', fontWeight: 500 }}>
+                      <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 500 }}>
                         {po.products?.name || '—'}
                       </td>
-                      <td style={{ padding: '10px 12px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      <td style={{ padding: '10px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                         {po.suppliers?.company_name || '—'}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <span className={`badge ${
                           po.status === 'Recibido' || po.status === 'Cerrado' ? 'badge-success' :
                           po.status === 'Pendiente' || po.status === 'Producción' ? 'badge-neutral' : 'badge-warning'
@@ -427,7 +429,7 @@ export default function Dashboard({ onNavigate }) {
                           {po.status}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                         {formatCurrency(po.total_cost)}
                       </td>
                     </tr>
@@ -439,27 +441,27 @@ export default function Dashboard({ onNavigate }) {
         </div>
 
         {/* Column 2: Urgent Tasks */}
-        <div className="card" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 className="card-title" style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Tareas Operativas Pendientes</h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Prioridades asignadas en tu tablero Kanban</p>
+        <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Tareas Operativas Pendientes</h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>Prioridades asignadas en tu tablero Kanban</p>
             </div>
             <button 
               className="btn btn-secondary btn-sm" 
               onClick={() => onNavigate('tasks')}
-              style={{ fontSize: '0.78rem' }}
+              style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
               Tablero Kanban →
             </button>
           </div>
 
           {urgentTasks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
+            <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
               ¡Todo al día! No tienes tareas pendientes.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
               {urgentTasks.map(task => (
                 <div key={task.id} style={{ 
                   display: 'flex', 
@@ -469,9 +471,10 @@ export default function Dashboard({ onNavigate }) {
                   backgroundColor: 'var(--bg-tertiary)', 
                   border: '1px solid var(--border-color)', 
                   borderRadius: 'var(--border-radius-sm)',
-                  gap: '12px'
+                  gap: '12px',
+                  minWidth: 0
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0, flex: 1 }}>
                     <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {task.title}
                     </span>

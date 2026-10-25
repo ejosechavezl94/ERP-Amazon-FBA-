@@ -381,20 +381,23 @@ function App() {
                 </button>
 
                 {isNotifOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    right: '0',
-                    marginTop: '8px',
-                    width: '320px',
-                    backgroundColor: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--border-radius-lg)',
-                    boxShadow: 'var(--shadow-lg)',
-                    zIndex: 1000,
-                    padding: '16px',
-                    animation: 'fadeIn 0.2s ease'
-                  }}>
+                  <div
+                    className="notif-dropdown"
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: '0',
+                      marginTop: '8px',
+                      width: '320px',
+                      backgroundColor: 'var(--bg-primary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius-lg)',
+                      boxShadow: 'var(--shadow-lg)',
+                      zIndex: 1000,
+                      padding: '16px',
+                      animation: 'fadeIn 0.2s ease'
+                    }}
+                  >
                     <h4 style={{ margin: '0 0 12px 0', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
                       Alertas de Inventario Bajo ({lowStockAlerts.length})
                     </h4>
@@ -504,7 +507,7 @@ function App() {
             )}
 
             {profile?.full_name && (
-              <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+              <span className="desktop-welcome-text" style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
                 Bienvenido, {profile.full_name}
               </span>
             )}

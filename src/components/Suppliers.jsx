@@ -149,17 +149,18 @@ export default function Suppliers() {
       {/* Search bar */}
       <div style={{ 
         display: 'flex', 
-        gap: '16px', 
+        gap: '12px', 
         marginBottom: '24px', 
         alignItems: 'center', 
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
         background: 'var(--surface-color)',
-        padding: '16px 20px',
+        padding: '16px',
         borderRadius: '16px',
         border: '1px solid var(--border-color)',
         boxShadow: 'var(--shadow-sm)'
       }}>
-        <div style={{ position: 'relative', width: '320px' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: '100%' }}>
           <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
           <input 
             type="text" 
@@ -167,10 +168,10 @@ export default function Suppliers() {
             placeholder="Buscar por empresa, contacto, país o email..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '40px', borderRadius: '10px' }}
+            style={{ paddingLeft: '40px', borderRadius: '10px', width: '100%' }}
           />
         </div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+        <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
           {filteredSuppliers.length} {filteredSuppliers.length === 1 ? 'proveedor registrado' : 'proveedores registrados'}
         </div>
       </div>

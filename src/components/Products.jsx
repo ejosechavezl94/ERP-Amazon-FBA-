@@ -170,41 +170,41 @@ export default function Products() {
       {/* Filters and Search Bar */}
       <div style={{ 
         display: 'flex', 
-        gap: '16px', 
+        gap: '12px', 
         marginBottom: '24px', 
         alignItems: 'center', 
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         background: 'var(--surface-color)',
-        padding: '16px 20px',
+        padding: '16px',
         borderRadius: '16px',
         border: '1px solid var(--border-color)',
         boxShadow: 'var(--shadow-sm)'
       }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flex: 1, minWidth: '300px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, flexWrap: 'wrap', width: '100%' }}>
+          <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 0 }}>
             <Search size={16} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Buscar por SKU, ASIN, EAN o nombre de producto..." 
+              placeholder="Buscar por SKU, ASIN, EAN o nombre..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              style={{ paddingLeft: '40px', borderRadius: '10px' }}
+              style={{ paddingLeft: '40px', borderRadius: '10px', width: '100%' }}
             />
           </div>
           <select 
             className="form-select" 
             value={filterBrand}
             onChange={(e) => setFilterBrand(e.target.value)}
-            style={{ width: '180px', borderRadius: '10px' }}
+            style={{ flex: '0 1 180px', minWidth: '140px', borderRadius: '10px' }}
           >
             {brands.map(b => (
               <option key={b} value={b}>{b === 'All' ? 'Todas las Marcas' : b}</option>
             ))}
           </select>
         </div>
-        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+        <div style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
           {filteredProducts.length} {filteredProducts.length === 1 ? 'producto encontrado' : 'productos encontrados'}
         </div>
       </div>

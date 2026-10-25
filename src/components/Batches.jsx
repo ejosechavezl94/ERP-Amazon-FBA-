@@ -223,8 +223,8 @@ export default function Batches() {
       </div>
 
       {/* Filters & Search */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ position: 'relative', width: '320px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: '100%' }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '11px', color: 'var(--text-tertiary)' }} />
           <input 
             type="text" 
@@ -232,7 +232,7 @@ export default function Batches() {
             placeholder="Buscar por lote, SKU, producto..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ paddingLeft: '36px' }}
+            style={{ paddingLeft: '36px', width: '100%' }}
           />
         </div>
       </div>

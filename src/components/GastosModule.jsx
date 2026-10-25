@@ -207,43 +207,45 @@ export default function GastosModule() {
           {fijos.length === 0 ? (
             <div className="g-empty">Sin gastos fijos. Añade el primero.</div>
           ) : (
-            <table className="g-table">
-              <thead>
-                <tr>
-                  <th>Concepto</th>
-                  <th>Categoría</th>
-                  <th style={{ textAlign: "right" }}>Importe / mes</th>
-                  <th style={{ textAlign: "center" }}>Activo</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {fijos.map(g => (
-                  <tr key={g.id} className={!g.activo ? "g-row-inactive" : ""}>
-                    <td className="g-concepto">{g.concepto}</td>
-                    <td><span className="g-badge g-badge-cat">{g.categoria}</span></td>
-                    <td style={{ textAlign: "right", fontWeight: 500 }}>{fmt(g.importe)}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <button
-                        className="g-toggle"
-                        onClick={() => toggleFijo(g.id, g.activo)}
-                        aria-label={g.activo ? "Desactivar" : "Activar"}
-                      >
-                        {g.activo
-                          ? <ToggleRight size={20} style={{ color: "#1D9E75" }} />
-                          : <ToggleLeft size={20} style={{ color: "#888" }} />
-                        }
-                      </button>
-                    </td>
-                    <td>
-                      <button className="g-icon-btn" onClick={() => deleteFijo(g.id)} aria-label="Eliminar">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
+            <div className="table-container" style={{ borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', overflowX: 'auto' }}>
+              <table className="g-table" style={{ border: 'none' }}>
+                <thead>
+                  <tr>
+                    <th>Concepto</th>
+                    <th>Categoría</th>
+                    <th style={{ textAlign: "right" }}>Importe / mes</th>
+                    <th style={{ textAlign: "center" }}>Activo</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {fijos.map(g => (
+                    <tr key={g.id} className={!g.activo ? "g-row-inactive" : ""}>
+                      <td className="g-concepto">{g.concepto}</td>
+                      <td><span className="g-badge g-badge-cat">{g.categoria}</span></td>
+                      <td style={{ textAlign: "right", fontWeight: 500, whiteSpace: "nowrap" }}>{fmt(g.importe)}</td>
+                      <td style={{ textAlign: "center" }}>
+                        <button
+                          className="g-toggle"
+                          onClick={() => toggleFijo(g.id, g.activo)}
+                          aria-label={g.activo ? "Desactivar" : "Activar"}
+                        >
+                          {g.activo
+                            ? <ToggleRight size={20} style={{ color: "#1D9E75" }} />
+                            : <ToggleLeft size={20} style={{ color: "#888" }} />
+                          }
+                        </button>
+                      </td>
+                      <td>
+                        <button className="g-icon-btn" onClick={() => deleteFijo(g.id)} aria-label="Eliminar">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       ) : (
@@ -260,34 +262,36 @@ export default function GastosModule() {
           {variables.length === 0 ? (
             <div className="g-empty">Sin gastos variables este mes.</div>
           ) : (
-            <table className="g-table">
-              <thead>
-                <tr>
-                  <th>Concepto</th>
-                  <th>Categoría</th>
-                  <th>Fecha</th>
-                  <th>Notas</th>
-                  <th style={{ textAlign: "right" }}>Importe</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {variables.map(g => (
-                  <tr key={g.id}>
-                    <td className="g-concepto">{g.concepto}</td>
-                    <td><span className="g-badge g-badge-cat">{g.categoria}</span></td>
-                    <td className="g-muted">{g.fecha}</td>
-                    <td className="g-muted">{g.notas || "—"}</td>
-                    <td style={{ textAlign: "right", fontWeight: 500 }}>{fmt(g.importe)}</td>
-                    <td>
-                      <button className="g-icon-btn" onClick={() => deleteVariable(g.id)} aria-label="Eliminar">
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
+            <div className="table-container" style={{ borderRadius: 'var(--border-radius)', border: '1px solid var(--border-color)', overflowX: 'auto' }}>
+              <table className="g-table" style={{ border: 'none' }}>
+                <thead>
+                  <tr>
+                    <th>Concepto</th>
+                    <th>Categoría</th>
+                    <th>Fecha</th>
+                    <th>Notas</th>
+                    <th style={{ textAlign: "right" }}>Importe</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {variables.map(g => (
+                    <tr key={g.id}>
+                      <td className="g-concepto">{g.concepto}</td>
+                      <td><span className="g-badge g-badge-cat">{g.categoria}</span></td>
+                      <td className="g-muted" style={{ whiteSpace: "nowrap" }}>{g.fecha}</td>
+                      <td className="g-muted">{g.notas || "—"}</td>
+                      <td style={{ textAlign: "right", fontWeight: 500, whiteSpace: "nowrap" }}>{fmt(g.importe)}</td>
+                      <td>
+                        <button className="g-icon-btn" onClick={() => deleteVariable(g.id)} aria-label="Eliminar">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       )}
