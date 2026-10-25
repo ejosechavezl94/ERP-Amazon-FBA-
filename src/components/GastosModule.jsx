@@ -117,13 +117,18 @@ export default function GastosModule() {
     setVariables(prev => prev.filter(g => g.id !== id));
   }
 
-  // ── Exportar CSV ──────────────────────────────────────────
+  // ── Exportar CSV (con sanitización anti-CSV Formula Injection CWE-1236) ──
+  function sanitizeCSVCell(val) {
+    const str = String(val ?? "").replace(/"/g, '""');
+    return /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+  }
+
   function exportCSV() {
     const fijoRows = fijos
       .filter(g => g.activo)
-      .map(g => `"${g.concepto}","${g.categoria}","fijo","mensual","${Number(g.importe).toFixed(2)}","${mes}",""`);
+      .map(g => `"${sanitizeCSVCell(g.concepto)}","${sanitizeCSVCell(g.categoria)}","fijo","mensual","${Number(g.importe).toFixed(2)}","${mes}",""`);
     const varRows = variables
-      .map(g => `"${g.concepto}","${g.categoria}","variable","único","${Number(g.importe).toFixed(2)}","${g.fecha}","${g.notas || ""}"`);
+      .map(g => `"${sanitizeCSVCell(g.concepto)}","${sanitizeCSVCell(g.categoria)}","variable","único","${Number(g.importe).toFixed(2)}","${g.fecha}","${sanitizeCSVCell(g.notas || "")}"`);
     const csv = [
       "Concepto,Categoría,Tipo,Frecuencia,Importe,Fecha,Notas",
       ...fijoRows, ...varRows

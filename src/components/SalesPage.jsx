@@ -134,8 +134,13 @@ export default function SalesPage() {
     }
   }
 
+  function sanitizeCSVCell(val) {
+    const str = String(val ?? "").replace(/"/g, '""');
+    return /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+  }
+
   function exportCSV() {
-    const rows = sales.map(s => `"${s.sale_date}","${s.products?.sku_internal || ""}","${s.products?.name || ""}","${s.quantity}","${Number(s.products?.target_price || 0).toFixed(2)}","${Number(s.quantity * (s.products?.target_price || 0)).toFixed(2)}","${s.notes || ""}"`);
+    const rows = sales.map(s => `"${s.sale_date}","${sanitizeCSVCell(s.products?.sku_internal || "")}","${sanitizeCSVCell(s.products?.name || "")}","${s.quantity}","${Number(s.products?.target_price || 0).toFixed(2)}","${Number(s.quantity * (s.products?.target_price || 0)).toFixed(2)}","${sanitizeCSVCell(s.notes || "")}"`);
     const csv = [
       "Fecha,SKU,Producto,Cantidad,Precio Unitario,Total,Notas",
       ...rows
