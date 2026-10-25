@@ -11,6 +11,7 @@ import Settings from './components/Settings';
 import GlobalSearch from './components/GlobalSearch';
 import SalesPage from './components/SalesPage';
 import SessionNavBar from './components/SessionNavBar';
+import MobileNavBar from './components/MobileNavBar';
 
 const Tasks = React.lazy(() => import('./components/Tasks'));
 const GastosPage = React.lazy(() => import('./components/GastosPage'));
@@ -321,9 +322,16 @@ function App() {
       <main className="main-content">
         {/* Top Header */}
         <header className="top-bar">
+          <div className="mobile-brand-header">
+            <div className="mobile-brand-logo-wrap">
+              <img src="/amazon-logo.png" alt="Amazon FBA" className="mobile-brand-logo" />
+            </div>
+            <span className="mobile-brand-title">Portal FBA</span>
+          </div>
+
           <button className="search-trigger" onClick={() => setIsSearchOpen(true)}>
             <Search size={14} />
-            <span>Buscar...</span>
+            <span className="search-trigger-text">Buscar...</span>
             <span className="search-shortcut">⌘K</span>
           </button>
 
@@ -529,6 +537,19 @@ function App() {
           </React.Suspense>
         </div>
       </main>
+
+      {/* Mobile iOS Bottom Navigation Bar */}
+      {session && (
+        <MobileNavBar
+          currentTab={currentTab}
+          setCurrentTab={setCurrentTab}
+          session={session}
+          profile={profile}
+          handleSignOut={handleSignOut}
+          theme={theme}
+          toggleTheme={toggleTheme}
+        />
+      )}
 
       {/* Global Search Overlay */}
       <GlobalSearch 

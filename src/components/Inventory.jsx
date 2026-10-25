@@ -510,145 +510,321 @@ export default function Inventory() {
               <p style={{ margin: 0, fontSize: '0.875rem' }}>El inventario se crea automáticamente al registrar nuevos SKUs en el catálogo.</p>
             </div>
           ) : (
-            <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-              <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-                <thead>
-                  <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Almacén</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Físico</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Reservado</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>En Tránsito</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Disponible</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Mínimo</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Valor Stock</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Ventas (30d)</th>
-                    <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Cobertura Est.</th>
-                    <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredInventory.map(item => {
-                    const isUnderMin = item.stock_available < item.stock_min;
-                    const isCritical = item.stock_available === 0 && item.stock_min > 0;
+            <>
+              {/* Desktop Table View */}
+              <div className="table-container desktop-only-table" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+                <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Almacén</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Físico</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Reservado</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>En Tránsito</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Disponible</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Mínimo</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Valor Stock</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Ventas (30d)</th>
+                      <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Cobertura Est.</th>
+                      <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredInventory.map(item => {
+                      const isUnderMin = item.stock_available < item.stock_min;
+                      const isCritical = item.stock_available === 0 && item.stock_min > 0;
 
-                    return (
-                      <tr key={item.id} style={{ 
-                        backgroundColor: isCritical ? 'rgba(239, 68, 68, 0.05)' : isUnderMin ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
-                        borderBottom: '1px solid var(--border-color)',
-                        transition: 'background 0.15s ease'
-                      }}>
-                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.85rem' }}>
-                          <span style={{ 
-                            background: 'rgba(245, 158, 11, 0.08)', 
-                            color: 'var(--text-primary)', 
-                            padding: '4px 8px', 
-                            borderRadius: '6px',
-                            border: '1px solid rgba(245, 158, 11, 0.2)'
-                          }}>
-                            {item.sku_internal}
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                                {item.product_name || 'Sin nombre'}
-                              </span>
-                              {item.warehouse_type === 'FBA' ? (
-                                <span 
-                                  title="Stock en centro logístico de Amazon FBA"
-                                  style={{ 
-                                    fontSize: '0.72rem', 
-                                    padding: '2px 8px',
-                                    borderRadius: '6px',
-                                    fontWeight: 700,
-                                    background: 'rgba(245, 158, 11, 0.15)',
-                                    color: '#f59e0b',
-                                    border: '1px solid rgba(245, 158, 11, 0.35)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                >
-                                  <Package size={12} /> Amazon FBA
+                      return (
+                        <tr key={item.id} style={{ 
+                          backgroundColor: isCritical ? 'rgba(239, 68, 68, 0.05)' : isUnderMin ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
+                          borderBottom: '1px solid var(--border-color)',
+                          transition: 'background 0.15s ease'
+                        }}>
+                          <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.85rem' }}>
+                            <span style={{ 
+                              background: 'rgba(245, 158, 11, 0.08)', 
+                              color: 'var(--text-primary)', 
+                              padding: '4px 8px', 
+                              borderRadius: '6px',
+                              border: '1px solid rgba(245, 158, 11, 0.2)'
+                            }}>
+                              {item.sku_internal}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                                  {item.product_name || 'Sin nombre'}
                                 </span>
-                              ) : (
-                                <span 
-                                  title="Stock físico en almacén local propio"
-                                  style={{ 
-                                    fontSize: '0.72rem', 
-                                    padding: '2px 8px',
-                                    borderRadius: '6px',
-                                    fontWeight: 700,
-                                    background: 'rgba(59, 130, 246, 0.15)',
-                                    color: '#60a5fa',
-                                    border: '1px solid rgba(59, 130, 246, 0.35)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                >
-                                  <Building2 size={12} /> Almacén Local
+                                {item.warehouse_type === 'FBA' ? (
+                                  <span 
+                                    title="Stock en centro logístico de Amazon FBA"
+                                    style={{ 
+                                      fontSize: '0.72rem', 
+                                      padding: '2px 8px',
+                                      borderRadius: '6px',
+                                      fontWeight: 700,
+                                      background: 'rgba(245, 158, 11, 0.15)',
+                                      color: '#f59e0b',
+                                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <Package size={12} /> Amazon FBA
+                                  </span>
+                                ) : (
+                                  <span 
+                                    title="Stock físico en almacén local propio"
+                                    style={{ 
+                                      fontSize: '0.72rem', 
+                                      padding: '2px 8px',
+                                      borderRadius: '6px',
+                                      fontWeight: 700,
+                                      background: 'rgba(59, 130, 246, 0.15)',
+                                      color: '#60a5fa',
+                                      border: '1px solid rgba(59, 130, 246, 0.35)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    <Building2 size={12} /> Almacén Local
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ display: 'flex', gap: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', flexWrap: 'wrap' }}>
+                                {item.product_brand && <span>Marca: {item.product_brand}</span>}
+                                {item.sku_amazon && <span style={{ fontFamily: 'var(--font-mono)' }}>AMZN: {item.sku_amazon}</span>}
+                                <span style={{ color: item.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)' }}>
+                                  Ubicación: {item.warehouse_type === 'FBA' ? 'Centro Logístico Amazon FBA' : 'Almacén Físico Propio'}
                                 </span>
-                              )}
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', flexWrap: 'wrap' }}>
-                              {item.product_brand && <span>Marca: {item.product_brand}</span>}
-                              {item.sku_amazon && <span style={{ fontFamily: 'var(--font-mono)' }}>AMZN: {item.sku_amazon}</span>}
-                              <span style={{ color: item.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)' }}>
-                                Ubicación: {item.warehouse_type === 'FBA' ? 'Centro Logístico Amazon FBA' : 'Almacén Físico Propio'}
-                              </span>
+                          </td>
+                          <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{item.stock_current}</td>
+                          <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{item.stock_reserved}</td>
+                          <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{item.stock_in_transit}</td>
+                          <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: isCritical ? '#ef4444' : isUnderMin ? '#f59e0b' : 'var(--text-primary)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {item.stock_available}
+                              {isCritical ? (
+                                <AlertCircle size={14} style={{ color: 'var(--danger-color)' }} />
+                              ) : isUnderMin ? (
+                                <AlertTriangle size={14} style={{ color: 'var(--warning-color)' }} />
+                              ) : null}
                             </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{item.stock_current}</td>
-                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{item.stock_reserved}</td>
-                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{item.stock_in_transit}</td>
-                        <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: isCritical ? '#ef4444' : isUnderMin ? '#f59e0b' : 'var(--text-primary)' }}>
+                          </td>
+                          <td>{item.stock_min}</td>
+                          <td style={{ fontWeight: 500 }}>{formatCurrency(item.inventory_value)}</td>
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem' }}>
+                              <span>7d: <strong>{item.sales_7_days || 0}</strong> un.</span>
+                              <span style={{ color: 'var(--text-secondary)' }}>30d: <strong>{item.sales_30_days || 0}</strong> un.</span>
+                            </div>
+                          </td>
+                          <td>{item.estimated_daily_sales}/día</td>
+                          <td style={{ fontWeight: 600 }}>
+                            <span className={`badge ${
+                              item.days_coverage === null ? 'badge-neutral' :
+                              item.days_coverage < 15 ? 'badge-danger' : 
+                              item.days_coverage < 30 ? 'badge-warning' : 'badge-success'
+                            }`}>
+                              {formatDaysCoverage(item.days_coverage)}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div style={{ display: 'inline-flex', gap: '8px' }}>
+                              <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openSaleModal(item.product_id, item.warehouse_type || 'LOCAL')} title="Registrar Venta">
+                                <ShoppingCart size={14} />
+                              </button>
+                              <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(item)} title="Ajustar Stock / Parámetros">
+                                <Edit2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards View (iOS Native Experience) */}
+              <div className="inventory-mobile-cards">
+                {filteredInventory.map(item => {
+                  const isUnderMin = item.stock_available < item.stock_min;
+                  const isCritical = item.stock_available === 0 && item.stock_min > 0;
+
+                  return (
+                    <div 
+                      key={`mob-${item.id}`} 
+                      className="card inventory-mobile-card"
+                      style={{
+                        padding: '16px',
+                        borderRadius: '16px',
+                        backgroundColor: isCritical ? 'rgba(239, 68, 68, 0.05)' : isUnderMin ? 'rgba(245, 158, 11, 0.05)' : 'var(--bg-secondary)',
+                        border: `1px solid ${isCritical ? 'rgba(239, 68, 68, 0.25)' : isUnderMin ? 'rgba(245, 158, 11, 0.25)' : 'var(--border-color)'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                      }}
+                    >
+                      {/* Card Header: SKU, Brand & Warehouse Badge */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {item.stock_available}
-                            {isCritical ? (
-                              <AlertCircle size={14} style={{ color: 'var(--danger-color)' }} />
-                            ) : isUnderMin ? (
-                              <AlertTriangle size={14} style={{ color: 'var(--warning-color)' }} />
-                            ) : null}
+                            <span style={{ 
+                              fontFamily: 'var(--font-mono)', 
+                              fontWeight: 700, 
+                              fontSize: '0.78rem',
+                              background: 'rgba(245, 158, 11, 0.1)', 
+                              color: 'var(--text-primary)', 
+                              padding: '2px 7px', 
+                              borderRadius: '5px',
+                              border: '1px solid rgba(245, 158, 11, 0.25)'
+                            }}>
+                              {item.sku_internal}
+                            </span>
+                            {item.sku_amazon && (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                                AMZN: {item.sku_amazon}
+                              </span>
+                            )}
                           </div>
-                        </td>
-                        <td>{item.stock_min}</td>
-                        <td style={{ fontWeight: 500 }}>{formatCurrency(item.inventory_value)}</td>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.8rem' }}>
-                            <span>7d: <strong>{item.sales_7_days || 0}</strong> un.</span>
-                            <span style={{ color: 'var(--text-secondary)' }}>30d: <strong>{item.sales_30_days || 0}</strong> un.</span>
+                          <span style={{ fontWeight: 700, fontSize: '0.98rem', color: 'var(--text-primary)', marginTop: '2px', lineHeight: 1.3 }}>
+                            {item.product_name || 'Sin nombre'}
+                          </span>
+                          {item.product_brand && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              Marca: {item.product_brand}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Warehouse Badge */}
+                        <div>
+                          {item.warehouse_type === 'FBA' ? (
+                            <span style={{ 
+                              fontSize: '0.72rem', 
+                              padding: '4px 8px', 
+                              borderRadius: '8px', 
+                              fontWeight: 700, 
+                              background: 'rgba(245, 158, 11, 0.18)', 
+                              color: '#f59e0b', 
+                              border: '1px solid rgba(245, 158, 11, 0.35)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              <Package size={12} /> Amazon FBA
+                            </span>
+                          ) : (
+                            <span style={{ 
+                              fontSize: '0.72rem', 
+                              padding: '4px 8px', 
+                              borderRadius: '8px', 
+                              fontWeight: 700, 
+                              background: 'rgba(59, 130, 246, 0.18)', 
+                              color: '#60a5fa', 
+                              border: '1px solid rgba(59, 130, 246, 0.35)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              <Building2 size={12} /> Almacén Local
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Key Stock Metrics Grid */}
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(3, 1fr)', 
+                        gap: '8px', 
+                        padding: '10px 12px', 
+                        background: 'var(--surface-color)', 
+                        borderRadius: '12px',
+                        border: '1px solid var(--border-color)'
+                      }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Disponible</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                            <strong style={{ fontSize: '1.15rem', color: isCritical ? '#ef4444' : isUnderMin ? '#f59e0b' : 'var(--text-primary)' }}>
+                              {item.stock_available}
+                            </strong>
+                            {isCritical && <AlertCircle size={13} style={{ color: '#ef4444' }} />}
+                            {isUnderMin && !isCritical && <AlertTriangle size={13} style={{ color: '#f59e0b' }} />}
                           </div>
-                        </td>
-                        <td>{item.estimated_daily_sales}/día</td>
-                        <td style={{ fontWeight: 600 }}>
-                          <span className={`badge ${
-                            item.days_coverage === null ? 'badge-neutral' :
-                            item.days_coverage < 15 ? 'badge-danger' : 
-                            item.days_coverage < 30 ? 'badge-warning' : 'badge-success'
-                          }`}>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Mín: {item.stock_min}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Físico / Tráns.</span>
+                          <span style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>
+                            {item.stock_current} / {item.stock_in_transit}
+                          </span>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Res: {item.stock_reserved}</span>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Cobertura</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
                             {formatDaysCoverage(item.days_coverage)}
                           </span>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '8px' }}>
-                            <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openSaleModal(item.product_id, item.warehouse_type || 'LOCAL')} title="Registrar Venta">
-                              <ShoppingCart size={14} />
-                            </button>
-                            <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(item)} title="Ajustar Stock / Parámetros">
-                              <Edit2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>{item.estimated_daily_sales || 0}/día</span>
+                        </div>
+                      </div>
+
+                      {/* Quick Action Touch Targets (iOS 44px ergonomics) */}
+                      <div style={{ display: 'flex', gap: '8px', paddingTop: '2px' }}>
+                        <button 
+                          type="button"
+                          className="btn btn-secondary btn-sm" 
+                          onClick={() => openSaleModal(item.product_id, item.warehouse_type || 'LOCAL')} 
+                          style={{ 
+                            flex: 1, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '6px', 
+                            fontSize: '0.82rem', 
+                            fontWeight: 600, 
+                            borderRadius: '10px',
+                            minHeight: '38px'
+                          }}
+                        >
+                          <ShoppingCart size={15} /> Registrar Venta
+                        </button>
+                        <button 
+                          type="button"
+                          className="btn btn-secondary btn-sm" 
+                          onClick={() => openEditModal(item)} 
+                          style={{ 
+                            flex: 1, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '6px', 
+                            fontSize: '0.82rem', 
+                            fontWeight: 600, 
+                            borderRadius: '10px',
+                            minHeight: '38px'
+                          }}
+                        >
+                          <Edit2 size={15} /> Ajustar Stock
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </>
       ) : (
