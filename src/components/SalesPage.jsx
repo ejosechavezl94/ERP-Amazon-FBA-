@@ -15,7 +15,7 @@ const mesActual = () => {
   return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, "0")}`;
 };
 
-const EMPTY_SALE = { productId: "", quantity: 1, date: new Date().toISOString().split("T")[0], notes: "", warehouseType: "LOCAL" };
+const EMPTY_SALE = { productId: "", quantity: 1, date: new Date().toISOString().split("T")[0], amazonOrderId: "", notes: "", warehouseType: "FBA" };
 
 export default function SalesPage() {
   const [mes, setMes] = useState(mesActual);
@@ -51,7 +51,9 @@ export default function SalesPage() {
             name,
             sku_internal,
             target_price,
-            cost_total
+            cost_total,
+            fba_fee,
+            referral_fee_pct
           )
         `)
         .gte("sale_date", `${mes}-01`)
@@ -80,10 +82,17 @@ export default function SalesPage() {
     }
   }
 
-  // Calculate metrics
+  // Calculate FBA metrics
   const totalRevenue = sales.reduce((sum, s) => sum + (s.quantity * (s.products?.target_price || 0)), 0);
   const totalUnits = sales.reduce((sum, s) => sum + s.quantity, 0);
-  const totalProfit = sales.reduce((sum, s) => sum + (s.quantity * ((s.products?.target_price || 0) - (s.products?.cost_total || 0))), 0);
+  const totalProfit = sales.reduce((sum, s) => {
+    const price = Number(s.products?.target_price || 0);
+    const cost = Number(s.products?.cost_total || 0);
+    const fbaFee = Number(s.amazon_fba_fee || s.products?.fba_fee || 0);
+    const refPct = Number(s.products?.referral_fee_pct ?? 15);
+    const refFee = s.amazon_referral_fee > 0 ? Number(s.amazon_referral_fee) : price * (refPct / 100);
+    return sum + (s.quantity * (price - cost - fbaFee - refFee));
+  }, 0);
   const averageTicket = sales.length > 0 ? totalRevenue / sales.length : 0;
 
   async function handleRegisterSale(e) {
@@ -96,15 +105,16 @@ export default function SalesPage() {
     setSaving(true);
 
     try {
-      // 1. Insert into sales
+      // 1. Insert into sales (100% Amazon FBA)
       const { error: saleErr } = await supabase
         .from("sales")
         .insert([{
           product_id: formS.productId,
           sale_date: formS.date,
           quantity: parseInt(formS.quantity, 10),
+          amazon_order_id: formS.amazonOrderId?.trim() || null,
           notes: formS.notes.trim() || null,
-          warehouse_type: formS.warehouseType || 'LOCAL',
+          warehouse_type: 'FBA',
           user_id: (await supabase.auth.getSession()).data.session?.user?.id
         }]);
 
@@ -167,9 +177,9 @@ export default function SalesPage() {
           </div>
           <h2 className="gastos-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em', display: "flex", alignItems: "center", gap: "10px" }}>
             <ShoppingBag size={22} style={{ color: "var(--accent-color)" }} />
-            Historial de Ventas
+            Historial de Ventas FBA
           </h2>
-          <p className="gastos-sub">Transacciones comerciales registradas en canales Amazon FBA y locales</p>
+          <p className="gastos-sub">Pedidos de clientes gestionados por la red logística de Amazon FBA</p>
         </div>
         <div className="gastos-header-actions">
           <MonthPicker value={mes} onChange={setMes} />
@@ -190,7 +200,7 @@ export default function SalesPage() {
           <span className="gmetric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 700 }}>{totalUnits} uds</span>
         </div>
         <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
-          <span className="gmetric-label" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Margen Bruto Est.</span>
+          <span className="gmetric-label" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Beneficio Neto FBA Est.</span>
           <span className="gmetric-value" style={{ color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 700 }}>{fmt(totalProfit)}</span>
         </div>
         <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
@@ -260,7 +270,7 @@ export default function SalesPage() {
                     </span>
                   </td>
                   <td style={{ padding: '14px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{s.products?.name}</span>
                       <span style={{ 
                         fontSize: '0.65rem', 
@@ -268,11 +278,16 @@ export default function SalesPage() {
                         borderRadius: '10px',
                         textTransform: 'uppercase',
                         fontWeight: 700,
-                        background: s.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
-                        color: s.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)'
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        color: '#f59e0b'
                       }}>
-                        {s.warehouse_type || 'LOCAL'}
+                        Amazon FBA
                       </span>
+                      {s.amazon_order_id && (
+                        <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
+                          #{s.amazon_order_id}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td style={{ padding: '14px 16px', textAlign: "right", fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{s.quantity}</td>
@@ -348,9 +363,19 @@ export default function SalesPage() {
             </div>
 
             <div className="g-field">
-              <label>Notas / Canal de venta</label>
+              <label>ID Pedido Amazon (Opcional - ej. 402-0000000-0000000)</label>
+              <input 
+                type="text" 
+                placeholder="Ej. 402-8391023-9182731" 
+                value={formS.amazonOrderId || ""} 
+                onChange={e => setFormS(prev => ({ ...prev, amazonOrderId: e.target.value }))} 
+              />
+            </div>
+
+            <div className="g-field">
+              <label>Notas / Marketplace</label>
               <textarea 
-                placeholder="Ej. Venta física en tienda, pedido web" 
+                placeholder="Ej. Amazon.es Prime FBA" 
                 value={formS.notes} 
                 onChange={e => setFormS(prev => ({ ...prev, notes: e.target.value }))} 
               />

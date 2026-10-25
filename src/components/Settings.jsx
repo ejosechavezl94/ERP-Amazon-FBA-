@@ -5,10 +5,13 @@ import {
   ExternalLink, Lock, CheckCircle2, ShoppingCart, Package, Bell, FileText, 
   Zap
 } from 'lucide-react';
+import { SPAPI_ENDPOINTS_SPEC, runSpApiSimulation } from '../services/spapiService';
 
 export default function Settings({ profile, onProfileUpdate }) {
   const [activeTab, setActiveTab] = useState('amazon'); // 'amazon' | 'profile'
   const [loading, setLoading] = useState(false);
+  const [simulatingSpApi, setSimulatingSpApi] = useState(false);
+  const [simResult, setSimResult] = useState(null);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
@@ -199,6 +202,21 @@ export default function Settings({ profile, onProfileUpdate }) {
     localStorage.removeItem('amazon_spapi_oauth_state');
     setSpapiStatus('disconnected');
     setSpapiMessage('Integración desconectada con éxito.');
+  };
+
+  const handleRunSimulation = async () => {
+    setSimulatingSpApi(true);
+    setSpapiError('');
+    setSpapiMessage('');
+    try {
+      const res = await runSpApiSimulation(supabase);
+      setSimResult(res);
+      setSpapiMessage(`¡Prueba SP-API completada! Se sincronizaron ${res.syncedCount} SKU(s) con datos de FNSKU, tarifas FBA y desglose de inventario FBA.`);
+    } catch (err) {
+      setSpapiError(err.message || 'Error al ejecutar simulación SP-API');
+    } finally {
+      setSimulatingSpApi(false);
+    }
   };
 
   return (
@@ -608,6 +626,94 @@ export default function Settings({ profile, onProfileUpdate }) {
                 </div>
               </form>
             </div>
+          </div>
+
+          {/* SP-API Technical Mapping & Pre-Production Simulator */}
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Package size={18} style={{ color: 'var(--accent-color)' }} />
+                  <h3 className="card-title" style={{ margin: 0, fontSize: '1.05rem' }}>
+                    Arquitectura de Datos SP-API (100% FBA) & Simulador de Pruebas
+                  </h3>
+                </div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Tu base de datos ya tiene configuradas todas las columnas oficiales de Amazon FBA. Puedes probar el flujo completo ahora mismo antes de activar el Plan Profesional.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleRunSimulation}
+                disabled={simulatingSpApi}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '10px' }}
+              >
+                <RefreshCw size={14} className={simulatingSpApi ? 'animate-spin' : ''} />
+                {simulatingSpApi ? 'Sincronizando Payload FBA...' : 'Probar Flujo SP-API Ahora'}
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+              {SPAPI_ENDPOINTS_SPEC.map(spec => (
+                <div
+                  key={spec.id}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: '12px',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                    <strong style={{ fontSize: '0.84rem', color: 'var(--text-primary)' }}>{spec.name}</strong>
+                    <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700 }}>
+                      {spec.targetTable}
+                    </span>
+                  </div>
+                  <code style={{ fontSize: '0.7rem', color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', wordBreak: 'break-all' }}>
+                    {spec.endpoint}
+                  </code>
+                  <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px', fontSize: '0.73rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    {spec.fieldsMapped.map((f, i) => (
+                      <li key={i} style={{ fontFamily: 'var(--font-mono)' }}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            {simResult?.samplePayload && (
+              <div style={{
+                marginTop: '4px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                backgroundColor: 'var(--bg-primary)',
+                border: '1px solid rgba(16, 185, 129, 0.35)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#10b981' }}>
+                    ✓ Payload Oficial Amazon SP-API (`InventorySummary`) Procesado e Insertado en Supabase:
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                    {new Date(simResult.timestamp).toLocaleTimeString('es-ES')}
+                  </span>
+                </div>
+                <pre style={{
+                  margin: 0,
+                  fontSize: '0.72rem',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-secondary)',
+                  overflowX: 'auto',
+                  maxHeight: '200px'
+                }}>
+                  {JSON.stringify(simResult.samplePayload, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         </div>
       ) : (

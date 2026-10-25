@@ -18,7 +18,7 @@ export default function PurchaseOrders() {
   const [estArrival, setEstArrival] = useState('');
   const [status, setStatus] = useState('Pendiente');
   const [batchNo, setBatchNo] = useState('');
-  const [warehouseType, setWarehouseType] = useState('LOCAL');
+  const [fbaShipmentId, setFbaShipmentId] = useState('');
   const [error, setError] = useState(null);
 
   // Dynamic order lines state (Array of objects)
@@ -69,7 +69,7 @@ export default function PurchaseOrders() {
     setEstArrival('');
     setStatus('Pendiente');
     setBatchNo('');
-    setWarehouseType('LOCAL');
+    setFbaShipmentId('');
     setError(null);
     setIsModalOpen(true);
   };
@@ -82,7 +82,7 @@ export default function PurchaseOrders() {
     setEstArrival(po.estimated_arrival || '');
     setStatus(po.status);
     setBatchNo('');
-    setWarehouseType(po.warehouse_type || 'LOCAL');
+    setFbaShipmentId(po.fba_shipment_id || '');
     setError(null);
 
     // If purchase order contains items array, load it; otherwise fall back to single product columns
@@ -146,7 +146,8 @@ export default function PurchaseOrders() {
       order_date: orderDate,
       estimated_arrival: estArrival || null,
       status,
-      warehouse_type: warehouseType,
+      warehouse_type: 'FBA',
+      fba_shipment_id: fbaShipmentId.trim() || null,
       updated_at: new Date().toISOString()
     };
 
@@ -180,7 +181,7 @@ export default function PurchaseOrders() {
         // If PO was created directly in 'Enviado' or 'Aduanas', update transit inventory
         if (status === 'Enviado' || status === 'Aduanas') {
           for (const line of orderLines) {
-            await updateTransitInventory(line.productId, line.quantity, warehouseType);
+            await updateTransitInventory(line.productId, line.quantity);
           }
         } else if (status === 'Recibido') {
           await handlePOReceipt(savedPO);
@@ -195,11 +196,11 @@ export default function PurchaseOrders() {
   };
 
   // Helper to increment stock_in_transit
-  const updateTransitInventory = async (pId, qty, wType) => {
+  const updateTransitInventory = async (pId, qty) => {
     const { error } = await supabase.rpc('rpc_update_transit_inventory', { 
       p_product_id: pId, 
       p_qty: qty, 
-      p_warehouse_type: wType || 'LOCAL' 
+      p_warehouse_type: 'FBA' 
     });
     if (error) throw error;
   };
@@ -210,7 +211,7 @@ export default function PurchaseOrders() {
       const { error } = await supabase.rpc('rpc_handle_po_receipt', { 
         p_po_id: po.id, 
         p_batch_no: batchNo || '', 
-        p_warehouse_type: po.warehouse_type || 'LOCAL' 
+        p_warehouse_type: 'FBA' 
       });
       if (error) throw error;
     } catch (err) {
@@ -242,7 +243,7 @@ export default function PurchaseOrders() {
             : [{ productId: po.product_id, quantity: po.quantity }];
           
           for (const line of lines) {
-            await updateTransitInventory(line.productId || line.product_id, line.quantity, po.warehouse_type || 'LOCAL');
+            await updateTransitInventory(line.productId || line.product_id, line.quantity);
           }
         }
       }
@@ -384,18 +385,33 @@ export default function PurchaseOrders() {
                         <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                           PO-{po.order_number}
                         </span>
-                        <span style={{ 
-                          fontSize: '0.65rem', 
-                          padding: '2px 6px', 
-                          borderRadius: '10px',
-                          width: 'fit-content',
-                          textTransform: 'uppercase',
-                          fontWeight: 700,
-                          background: po.warehouse_type === 'FBA' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
-                          color: po.warehouse_type === 'FBA' ? '#f59e0b' : 'var(--text-secondary)'
-                        }}>
-                          {po.warehouse_type || 'LOCAL'}
-                        </span>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                          <span style={{ 
+                            fontSize: '0.65rem', 
+                            padding: '2px 6px', 
+                            borderRadius: '10px',
+                            width: 'fit-content',
+                            textTransform: 'uppercase',
+                            fontWeight: 700,
+                            background: 'rgba(245, 158, 11, 0.15)',
+                            color: '#f59e0b'
+                          }}>
+                            Amazon FBA
+                          </span>
+                          {po.fba_shipment_id && (
+                            <span style={{ 
+                              fontSize: '0.65rem', 
+                              padding: '2px 6px', 
+                              borderRadius: '6px',
+                              fontFamily: 'var(--font-mono)',
+                              background: 'var(--bg-tertiary)',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--border-color)'
+                            }}>
+                              {po.fba_shipment_id}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
@@ -509,15 +525,14 @@ export default function PurchaseOrders() {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Almacén de Destino</label>
-                    <select 
-                      className="form-select" 
-                      value={warehouseType} 
-                      onChange={(e) => setWarehouseType(e.target.value)}
-                    >
-                      <option value="LOCAL">LOCAL</option>
-                      <option value="FBA">FBA (Amazon)</option>
-                    </select>
+                    <label className="form-label">ID Envío FBA (Inbound)</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="Ej. FBA15X992A"
+                      value={fbaShipmentId} 
+                      onChange={(e) => setFbaShipmentId(e.target.value)} 
+                    />
                   </div>
                 </div>
 

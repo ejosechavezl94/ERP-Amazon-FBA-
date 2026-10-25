@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Plus, Edit2, Trash2, Search, X, Package, Check, RefreshCw } from 'lucide-react';
 import ConfirmDialog from './ui/ConfirmDialog';
+import { calculateFbaUnitMetrics } from '../services/spapiService';
 
 export default function Products() {
   const [products, setProducts] = useState([]);
@@ -15,6 +16,7 @@ export default function Products() {
   // Form states
   const [skuInternal, setSkuInternal] = useState('');
   const [asinAmazon, setAsinAmazon] = useState('');
+  const [fnsku, setFnsku] = useState('');
   const [eanCode, setEanCode] = useState('');
   const [name, setName] = useState('');
   const [brand, setBrand] = useState('');
@@ -22,6 +24,8 @@ export default function Products() {
   const [productToDelete, setProductToDelete] = useState(null);
   const [costAmazon, setCostAmazon] = useState(0);
   const [targetPrice, setTargetPrice] = useState(0);
+  const [fbaFee, setFbaFee] = useState(0);
+  const [referralFeePct, setReferralFeePct] = useState(15);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState(null);
 
@@ -54,12 +58,15 @@ export default function Products() {
     setEditingProduct(null);
     setSkuInternal('');
     setAsinAmazon('');
+    setFnsku('');
     setEanCode('');
     setName('');
     setBrand('');
     setStatus('Active');
     setCostAmazon(0);
     setTargetPrice(0);
+    setFbaFee(0);
+    setReferralFeePct(15);
     setNotes('');
     setError(null);
     setIsModalOpen(true);
@@ -69,12 +76,15 @@ export default function Products() {
     setEditingProduct(product);
     setSkuInternal(product.sku_internal);
     setAsinAmazon(product.asin_amazon || '');
+    setFnsku(product.fnsku || '');
     setEanCode(product.ean_code || '');
     setName(product.name);
     setBrand(product.brand || '');
     setStatus(product.status);
     setCostAmazon(product.cost_manufacturing);
     setTargetPrice(product.target_price);
+    setFbaFee(product.fba_fee || 0);
+    setReferralFeePct(product.referral_fee_pct ?? 15);
     setNotes(product.notes || '');
     setError(null);
     setIsModalOpen(true);
@@ -86,7 +96,9 @@ export default function Products() {
 
     const payload = {
       sku_internal: skuInternal,
+      sku_amazon: skuInternal,
       asin_amazon: asinAmazon || null,
+      fnsku: fnsku || null,
       ean_code: eanCode || null,
       name,
       brand: brand || null,
@@ -94,6 +106,8 @@ export default function Products() {
       cost_manufacturing: parseFloat(costAmazon) || 0,
       cost_shipping: 0,
       target_price: parseFloat(targetPrice) || 0,
+      fba_fee: parseFloat(fbaFee) || 0,
+      referral_fee_pct: parseFloat(referralFeePct) ?? 15,
       notes: notes || null,
       updated_at: new Date().toISOString()
     };
@@ -136,6 +150,7 @@ export default function Products() {
       p.name.toLowerCase().includes(search.toLowerCase()) || 
       p.sku_internal.toLowerCase().includes(search.toLowerCase()) || 
       (p.asin_amazon && p.asin_amazon.toLowerCase().includes(search.toLowerCase())) ||
+      (p.fnsku && p.fnsku.toLowerCase().includes(search.toLowerCase())) ||
       (p.ean_code && p.ean_code.toLowerCase().includes(search.toLowerCase()));
     
     const matchesBrand = filterBrand === 'All' || p.brand === filterBrand;
@@ -225,12 +240,13 @@ export default function Products() {
           <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU Interno</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>ASIN Amazon</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU FBA</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>ASIN / FNSKU</th>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Marca</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Coste Fab.</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>P. Venta AMZ</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Margen Est.</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Coste Ud.</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>PVP Amazon</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Tarifas FBA</th>
+                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Beneficio Neto</th>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Estado</th>
                 <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
               </tr>
@@ -239,7 +255,12 @@ export default function Products() {
               {filteredProducts.map(p => {
                 const cost = Number(p.cost_manufacturing) || 0;
                 const price = Number(p.target_price) || 0;
-                const marginPct = price > 0 ? ((price - cost) / price * 100) : 0;
+                const { totalAmazonFees, netProfit, netMarginPct } = calculateFbaUnitMetrics({
+                  price,
+                  cost,
+                  fbaFee: p.fba_fee || 0,
+                  referralFeePct: p.referral_fee_pct ?? 15
+                });
 
                 return (
                   <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s ease' }}>
@@ -255,31 +276,38 @@ export default function Products() {
                       </span>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      {p.asin_amazon ? (
-                        <a 
-                          href={`https://www.amazon.es/dp/${p.asin_amazon}`} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          style={{ 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            gap: '4px',
-                            fontFamily: 'var(--font-mono)', 
-                            fontSize: '0.825rem',
-                            fontWeight: 600,
-                            color: 'var(--accent-color)',
-                            textDecoration: 'none',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: 'var(--surface-color)',
-                            border: '1px solid var(--border-color)'
-                          }}
-                        >
-                          {p.asin_amazon} ↗
-                        </a>
-                      ) : (
-                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>—</span>
-                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                        {p.asin_amazon ? (
+                          <a 
+                            href={`https://www.amazon.es/dp/${p.asin_amazon}`} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '4px',
+                              fontFamily: 'var(--font-mono)', 
+                              fontSize: '0.8rem',
+                              fontWeight: 600,
+                              color: 'var(--accent-color)',
+                              textDecoration: 'none',
+                              padding: '2px 7px',
+                              borderRadius: '6px',
+                              background: 'var(--surface-color)',
+                              border: '1px solid var(--border-color)'
+                            }}
+                          >
+                            {p.asin_amazon} ↗
+                          </a>
+                        ) : (
+                          <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>Sin ASIN</span>
+                        )}
+                        {p.fnsku && (
+                          <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                            FNSKU: {p.fnsku}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{p.name}</div>
@@ -295,19 +323,32 @@ export default function Products() {
                     <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
                       {formatCurrency(price)}
                     </td>
+                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ color: '#f59e0b', fontWeight: 600 }}>-{formatCurrency(totalAmazonFees)}</span>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                          FBA: {formatCurrency(p.fba_fee || 0)} + {p.referral_fee_pct ?? 15}%
+                        </span>
+                      </div>
+                    </td>
                     <td style={{ padding: '14px 16px' }}>
                       {price > 0 ? (
-                        <span style={{ 
-                          fontFamily: 'var(--font-mono)', 
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          color: marginPct >= 40 ? '#10b981' : marginPct >= 20 ? '#f59e0b' : '#ef4444',
-                          background: marginPct >= 40 ? 'rgba(16, 185, 129, 0.1)' : marginPct >= 20 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                          padding: '3px 8px',
-                          borderRadius: '6px'
-                        }}>
-                          {marginPct.toFixed(1)}%
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: netProfit >= 0 ? '#10b981' : '#ef4444' }}>
+                            {formatCurrency(netProfit)}
+                          </span>
+                          <span style={{ 
+                            fontFamily: 'var(--font-mono)', 
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            color: netMarginPct >= 25 ? '#10b981' : netMarginPct >= 12 ? '#f59e0b' : '#ef4444',
+                            background: netMarginPct >= 25 ? 'rgba(16, 185, 129, 0.1)' : netMarginPct >= 12 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            padding: '2px 6px',
+                            borderRadius: '6px'
+                          }}>
+                            {netMarginPct.toFixed(1)}% neto
+                          </span>
+                        </div>
                       ) : (
                         <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>—</span>
                       )}
@@ -354,9 +395,9 @@ export default function Products() {
                   </div>
                 )}
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">SKU Interno *</label>
+                    <label className="form-label">SKU Seller Central *</label>
                     <input 
                       type="text" 
                       className="form-input" 
@@ -370,12 +411,26 @@ export default function Products() {
                     <input 
                       type="text" 
                       className="form-input" 
+                      placeholder="Ej. B09X7K2M9P"
                       value={asinAmazon} 
                       onChange={(e) => setAsinAmazon(e.target.value)} 
                     />
                   </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">Código EAN</label>
+                    <label className="form-label">FNSKU (Etiqueta FBA)</label>
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="Ej. X001FBA992"
+                      value={fnsku} 
+                      onChange={(e) => setFnsku(e.target.value)} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Código EAN / UPC</label>
                     <input 
                       type="text" 
                       className="form-input" 
@@ -422,7 +477,7 @@ export default function Products() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">Coste por Unidad (AMZ) (€)</label>
+                    <label className="form-label">Coste Producto Puesto en FBA (€)</label>
                     <input 
                       type="number" 
                       step="0.01" 
@@ -432,13 +487,37 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Precio de Venta Amz (€)</label>
+                    <label className="form-label">PVP en Amazon (€)</label>
                     <input 
                       type="number" 
                       step="0.01" 
                       className="form-input" 
                       value={targetPrice} 
                       onChange={(e) => setTargetPrice(e.target.value)} 
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Tarifa Logística FBA por Ud. (€)</label>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      className="form-input" 
+                      placeholder="Ej. 3.85"
+                      value={fbaFee} 
+                      onChange={(e) => setFbaFee(e.target.value)} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Comisión Referral Amazon (%)</label>
+                    <input 
+                      type="number" 
+                      step="0.1" 
+                      className="form-input" 
+                      value={referralFeePct} 
+                      onChange={(e) => setReferralFeePct(e.target.value)} 
                     />
                   </div>
                 </div>
