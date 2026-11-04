@@ -5,12 +5,13 @@ import {
   ExternalLink, Lock, CheckCircle2, ShoppingCart, Package, Bell, FileText, 
   Zap
 } from 'lucide-react';
-import { SPAPI_ENDPOINTS_SPEC, runSpApiSimulation } from '../services/spapiService';
+import { SPAPI_ENDPOINTS_SPEC, runSpApiSimulation, invokeRealSpApiSync } from '../services/spapiService';
 
 export default function Settings({ profile, onProfileUpdate }) {
   const [activeTab, setActiveTab] = useState('amazon'); // 'amazon' | 'profile'
   const [loading, setLoading] = useState(false);
   const [simulatingSpApi, setSimulatingSpApi] = useState(false);
+  const [syncingRealSpApi, setSyncingRealSpApi] = useState(false);
   const [showSimConfirm, setShowSimConfirm] = useState(false);
   const [simResult, setSimResult] = useState(null);
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -193,7 +194,7 @@ export default function Settings({ profile, onProfileUpdate }) {
     setSpapiMessage('Se ha abierto la ventana de consentimiento oficial de Amazon Seller Central. Concede los permisos a tu aplicación y regresa aquí para confirmar.');
   };
 
-  const handleConfirmAuthorization = () => {
+  const handleConfirmAuthorization = async () => {
     if (!isRealSpApiAppId(spapiAppId)) {
       setSpapiError('Falta un App ID real de SP-API. Consíguelo en Seller Central > Develop Apps');
       return;
@@ -204,6 +205,32 @@ export default function Settings({ profile, onProfileUpdate }) {
     setSpapiStatus('connected');
     setSpapiError('');
     setSpapiMessage('¡Conexión SP-API verificada y activa! La sincronización de inventario FBA y ventas queda autorizada.');
+  };
+
+  const handleRealSpApiSync = async () => {
+    setSyncingRealSpApi(true);
+    setSpapiError('');
+    setSpapiMessage('');
+    try {
+      const res = await invokeRealSpApiSync(supabase, {
+        action: 'sync_inventory',
+        region: spapiRegion,
+        marketplaceId: spapiRegion === 'sellercentral.amazon.com' ? 'ATVPDKIKX0DER' : 'A1RKKUPIHCS9HS'
+      });
+      if (res?.configured === false) {
+        setSpapiError(res.message || 'Faltan las claves secretas SP-API en Supabase Edge Functions.');
+      } else if (res?.connected === false || res?.error) {
+        setSpapiError(res.error || 'Error al sincronizar con Amazon SP-API.');
+      } else {
+        setSpapiStatus('connected');
+        localStorage.setItem('amazon_spapi_status', 'connected');
+        setSpapiMessage(`¡Sincronización real con Amazon SP-API completada! Se actualizaron ${res.syncedCount ?? 0} SKU(s) reales desde tu cuenta de Amazon FBA.`);
+      }
+    } catch (err) {
+      setSpapiError(err.message || 'Error al conectar con el servidor SP-API en Supabase.');
+    } finally {
+      setSyncingRealSpApi(false);
+    }
   };
 
   const handleDisconnect = () => {
@@ -648,6 +675,19 @@ export default function Settings({ profile, onProfileUpdate }) {
                       </button>
                     )}
                   </div>
+
+                  {spapiStatus === 'connected' && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleRealSpApiSync}
+                      disabled={syncingRealSpApi}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderColor: 'rgba(16, 185, 129, 0.4)', color: 'var(--success-color)' }}
+                    >
+                      <RefreshCw size={15} className={syncingRealSpApi ? 'animate-spin' : ''} />
+                      {syncingRealSpApi ? 'Sincronizando con Amazon SP-API...' : 'Sincronizar Inventario Real FBA Ahora'}
+                    </button>
+                  )}
                 </div>
               </form>
             </div>

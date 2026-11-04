@@ -175,3 +175,20 @@ export async function runSpApiSimulation() {
     mappedDbPreview: mapped
   };
 }
+
+/**
+ * Invoca la Edge Function segura `amazon-spapi-sync` en Supabase
+ * para verificar la conexión real con Amazon SP-API o sincronizar el inventario FBA real.
+ */
+export async function invokeRealSpApiSync(supabase, { action = 'check_connection', region = 'sellercentral.amazon.es', marketplaceId = 'A1RKKUPIHCS9HS' } = {}) {
+  if (!supabase) {
+    throw new Error('Cliente de Supabase no inicializado.');
+  }
+  const { data, error } = await supabase.functions.invoke('amazon-spapi-sync', {
+    body: { action, region, marketplaceId }
+  });
+  if (error) {
+    throw new Error(error.message || 'Error al conectar con la función amazon-spapi-sync en Supabase');
+  }
+  return data;
+}
