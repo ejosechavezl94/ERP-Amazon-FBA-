@@ -5,23 +5,22 @@ import {
   ExternalLink, Lock, CheckCircle2, ShoppingCart, Package, Bell, FileText, 
   Zap
 } from 'lucide-react';
-import { SPAPI_ENDPOINTS_SPEC, runSpApiSimulation, invokeRealSpApiSync } from '../services/spapiService';
+import { SPAPI_ENDPOINTS_SPEC, runSpApiSimulation, checkSpApiConnectionStatus } from '../services/spapiService';
 
 export default function Settings({ profile, onProfileUpdate }) {
   const [activeTab, setActiveTab] = useState('amazon'); // 'amazon' | 'profile'
   const [loading, setLoading] = useState(false);
   const [simulatingSpApi, setSimulatingSpApi] = useState(false);
-  const [syncingRealSpApi, setSyncingRealSpApi] = useState(false);
   const [showSimConfirm, setShowSimConfirm] = useState(false);
   const [simResult, setSimResult] = useState(null);
   const [fullName, setFullName] = useState(profile?.full_name || '');
   const [profileMessage, setProfileMessage] = useState('');
   const [profileError, setProfileError] = useState('');
 
-  // SP-API Integration state
-  const [spapiAppId, setSpapiAppId] = useState(() => localStorage.getItem('amazon_spapi_app_id') || '');
-  const [spapiRegion, setSpapiRegion] = useState(() => localStorage.getItem('amazon_spapi_region') || 'sellercentral.amazon.es');
-  const [spapiStatus, setSpapiStatus] = useState(() => localStorage.getItem('amazon_spapi_status') || 'disconnected');
+  // Real SP-API Connection state (from Supabase Edge Function "sp-api")
+  const [checkingSpApi, setCheckingSpApi] = useState(false);
+  const [spapiStatus, setSpapiStatus] = useState('checking'); // 'checking' | 'connected' | 'error'
+  const [spapiConnectionData, setSpapiConnectionData] = useState(null);
   const [spapiMessage, setSpapiMessage] = useState('');
   const [spapiError, setSpapiError] = useState('');
 
@@ -53,8 +52,35 @@ export default function Settings({ profile, onProfileUpdate }) {
     }
   };
 
+  const verifySpApiStatus = async () => {
+    setCheckingSpApi(true);
+    setSpapiError('');
+    try {
+      const res = await checkSpApiConnectionStatus(supabase);
+      setSpapiConnectionData(res);
+      if (res.connected) {
+        setSpapiStatus('connected');
+        setSpapiError('');
+      } else {
+        setSpapiStatus('error');
+        setSpapiError(res.error || 'No se pudo conectar con Amazon SP-API.');
+      }
+    } catch (err) {
+      setSpapiStatus('error');
+      setSpapiError(err.message || 'Error al comprobar el estado de Amazon SP-API.');
+    } finally {
+      setCheckingSpApi(false);
+    }
+  };
+
   useEffect(() => {
+    // Ensure no legacy SP-API data remains in localStorage
+    localStorage.removeItem('amazon_spapi_app_id');
+    localStorage.removeItem('amazon_spapi_region');
+    localStorage.removeItem('amazon_spapi_oauth_state');
+    localStorage.removeItem('amazon_spapi_status');
     checkMfaStatus();
+    verifySpApiStatus();
   }, []);
 
   const handleProfileSave = async (e) => {
@@ -163,93 +189,13 @@ export default function Settings({ profile, onProfileUpdate }) {
     }
   };
 
-  const isRealSpApiAppId = (rawValue) => {
-    const val = (rawValue || '').trim();
-    if (!val) return false;
-    if (val === 'amzn1.sp.solution.00000000-0000-0000-0000-000000000000') return false;
-    if (val.toLowerCase() === 'amzn1.sp.solution.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx') return false;
-    if (/^amzn1\.sp\.solution\.[0x-]+$/i.test(val)) return false;
-    return val.startsWith('amzn1.sp.solution.') && val.length > 'amzn1.sp.solution.'.length + 8;
-  };
-
-  const handleStartOAuth = (e) => {
-    if (e) e.preventDefault();
-    setSpapiError('');
-    setSpapiMessage('');
-
-    if (!isRealSpApiAppId(spapiAppId)) {
-      setSpapiError('Falta un App ID real de SP-API. Consíguelo en Seller Central > Develop Apps');
-      return;
-    }
-
-    const state = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
-    localStorage.setItem('amazon_spapi_app_id', spapiAppId.trim());
-    localStorage.setItem('amazon_spapi_region', spapiRegion);
-    localStorage.setItem('amazon_spapi_oauth_state', state);
-    localStorage.setItem('amazon_spapi_status', 'pending');
-    setSpapiStatus('pending');
-
-    const authUrl = `https://${spapiRegion}/apps/authorize/consent?application_id=${encodeURIComponent(spapiAppId.trim())}&state=${state}&version=beta`;
-    window.open(authUrl, '_blank', 'noopener,noreferrer');
-    setSpapiMessage('Se ha abierto la ventana de consentimiento oficial de Amazon Seller Central. Concede los permisos a tu aplicación y regresa aquí para confirmar.');
-  };
-
-  const handleConfirmAuthorization = async () => {
-    if (!isRealSpApiAppId(spapiAppId)) {
-      setSpapiError('Falta un App ID real de SP-API. Consíguelo en Seller Central > Develop Apps');
-      return;
-    }
-    localStorage.setItem('amazon_spapi_app_id', spapiAppId.trim());
-    localStorage.setItem('amazon_spapi_region', spapiRegion);
-    localStorage.setItem('amazon_spapi_status', 'connected');
-    setSpapiStatus('connected');
-    setSpapiError('');
-    setSpapiMessage('¡Conexión SP-API verificada y activa! La sincronización de inventario FBA y ventas queda autorizada.');
-  };
-
-  const handleRealSpApiSync = async () => {
-    setSyncingRealSpApi(true);
-    setSpapiError('');
-    setSpapiMessage('');
-    try {
-      const res = await invokeRealSpApiSync(supabase, {
-        action: 'sync_inventory',
-        region: spapiRegion,
-        marketplaceId: spapiRegion === 'sellercentral.amazon.com' ? 'ATVPDKIKX0DER' : 'A1RKKUPIHCS9HS'
-      });
-      if (res?.configured === false) {
-        setSpapiError(res.message || 'Faltan las claves secretas SP-API en Supabase Edge Functions.');
-      } else if (res?.connected === false || res?.error) {
-        setSpapiError(res.error || 'Error al sincronizar con Amazon SP-API.');
-      } else {
-        setSpapiStatus('connected');
-        localStorage.setItem('amazon_spapi_status', 'connected');
-        setSpapiMessage(`¡Sincronización real con Amazon SP-API completada! Se actualizaron ${res.syncedCount ?? 0} SKU(s) reales desde tu cuenta de Amazon FBA.`);
-      }
-    } catch (err) {
-      setSpapiError(err.message || 'Error al conectar con el servidor SP-API en Supabase.');
-    } finally {
-      setSyncingRealSpApi(false);
-    }
-  };
-
-  const handleDisconnect = () => {
-    if (!window.confirm('¿Seguro que deseas desconectar la integración con Amazon SP-API? Las notificaciones automáticas de ventas se desactivarán.')) return;
-    localStorage.removeItem('amazon_spapi_status');
-    localStorage.removeItem('amazon_spapi_oauth_state');
-    setSpapiStatus('disconnected');
-    setSpapiMessage('Integración desconectada con éxito.');
-  };
-
   const handleRequestSimulation = () => {
-    setSpapiError('');
     setShowSimConfirm(true);
   };
 
   const handleRunSimulation = async () => {
     setShowSimConfirm(false);
     setSimulatingSpApi(true);
-    setSpapiError('');
     setSpapiMessage('');
     try {
       const res = await runSpApiSimulation();
@@ -310,11 +256,11 @@ export default function Settings({ profile, onProfileUpdate }) {
             fontSize: '0.65rem', 
             padding: '2px 6px', 
             borderRadius: '4px', 
-            backgroundColor: spapiStatus === 'connected' ? 'var(--success-light)' : 'rgba(245, 158, 11, 0.15)',
-            color: spapiStatus === 'connected' ? 'var(--success-color)' : '#f59e0b',
+            backgroundColor: spapiStatus === 'connected' ? 'var(--success-light)' : spapiStatus === 'checking' ? 'rgba(245, 158, 11, 0.15)' : 'var(--danger-light)',
+            color: spapiStatus === 'connected' ? 'var(--success-color)' : spapiStatus === 'checking' ? '#f59e0b' : 'var(--danger-color)',
             fontWeight: 700
           }}>
-            {spapiStatus === 'connected' ? 'Conectado' : 'OAuth Oficial'}
+            {spapiStatus === 'connected' ? 'Conectado' : spapiStatus === 'checking' ? 'Comprobando...' : 'No conectado'}
           </span>
         </button>
         <button 
@@ -565,61 +511,76 @@ export default function Settings({ profile, onProfileUpdate }) {
               </a>
             </div>
 
-            {/* Column 2: OAuth Connection Form */}
+            {/* Column 2: Real SP-API Connection Status (Direct LWA Refresh Token via Edge Function "sp-api") */}
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <Zap size={18} style={{ color: 'var(--accent-color)' }} />
-                  <h3 className="card-title" style={{ margin: 0, fontSize: '1.05rem' }}>Conexión Oficial OAuth 2.0</h3>
+                  <h3 className="card-title" style={{ margin: 0, fontSize: '1.05rem' }}>Estado Real de Conexión SP-API</h3>
                 </div>
                 <span style={{ 
                   fontSize: '0.75rem', 
                   fontWeight: 700, 
                   padding: '3px 10px', 
                   borderRadius: '12px',
-                  backgroundColor: spapiStatus === 'connected' ? 'var(--success-light)' : spapiStatus === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(107, 114, 128, 0.15)',
-                  color: spapiStatus === 'connected' ? 'var(--success-color)' : spapiStatus === 'pending' ? '#f59e0b' : 'var(--text-secondary)',
-                  border: `1px solid ${spapiStatus === 'connected' ? 'rgba(16, 185, 129, 0.3)' : spapiStatus === 'pending' ? 'rgba(245, 158, 11, 0.3)' : 'var(--border-color)'}`
+                  backgroundColor: spapiStatus === 'connected' ? 'var(--success-light)' : spapiStatus === 'checking' ? 'rgba(245, 158, 11, 0.15)' : 'var(--danger-light)',
+                  color: spapiStatus === 'connected' ? 'var(--success-color)' : spapiStatus === 'checking' ? '#f59e0b' : 'var(--danger-color)',
+                  border: `1px solid ${spapiStatus === 'connected' ? 'rgba(16, 185, 129, 0.3)' : spapiStatus === 'checking' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`
                 }}>
-                  {spapiStatus === 'connected' ? '● Conectado' : spapiStatus === 'pending' ? '⏳ Pendiente' : '○ No conectado'}
+                  {spapiStatus === 'connected' ? '● Conectado' : spapiStatus === 'checking' ? '⏳ Comprobando...' : '● Error de conexión'}
                 </span>
               </div>
 
-              <form onSubmit={handleStartOAuth} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div className="form-group">
-                  <label className="form-label">Región / Marketplace de Seller Central *</label>
-                  <select 
-                    className="form-select" 
-                    value={spapiRegion}
-                    onChange={(e) => {
-                      const nextRegion = e.target.value;
-                      setSpapiRegion(nextRegion);
-                      localStorage.setItem('amazon_spapi_region', nextRegion);
-                    }}
-                  >
-                    <option value="sellercentral.amazon.es">Amazon Europa (España, Alemania, Francia, Italia, Reino Unido)</option>
-                    <option value="sellercentral.amazon.com">Amazon Norteamérica (Estados Unidos, México, Canadá)</option>
-                  </select>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                    Dominio oficial para la autorización OAuth de tu cuenta de vendedor.
-                  </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  fontSize: '0.82rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Aplicación Autorizada:</span>
+                    <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>Portal FBA ERP (Auto-autorizada)</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Estado de la conexión:</span>
+                    <strong style={{ color: spapiStatus === 'connected' ? 'var(--success-color)' : spapiStatus === 'checking' ? '#f59e0b' : 'var(--danger-color)' }}>
+                      {spapiStatus === 'connected' ? 'Conectado' : spapiStatus === 'checking' ? 'Comprobando con Amazon SP-API...' : 'No conectado / Error'}
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Marketplace:</span>
+                    <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                      {spapiConnectionData?.connected
+                        ? `${spapiConnectionData.marketplaceName} (${spapiConnectionData.marketplaceId} · ${spapiConnectionData.domainName})`
+                        : (spapiConnectionData?.marketplaceId || 'A1RKKUPIHCS9HS (Amazon.es)')}
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Última comprobación:</span>
+                    <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                      {spapiConnectionData?.checkedAt
+                        ? new Date(spapiConnectionData.checkedAt).toLocaleString('es-ES')
+                        : 'Pendiente...'}
+                    </strong>
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Application ID (App ID de Amazon) *</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    placeholder="amzn1.sp.solution.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                    value={spapiAppId}
-                    onChange={(e) => setSpapiAppId(e.target.value.trim())}
-                    required
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
-                  />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                    Obtén este identificador en Seller Central → Develop Apps tras crear tu aplicación privada.
-                  </span>
-                </div>
+                {spapiStatus === 'connected' && spapiConnectionData && (
+                  <div className="alert-banner alert-banner-success" style={{ marginBottom: 0 }}>
+                    ✓ Conectado en tiempo real con Amazon SP-API ({spapiConnectionData.marketplaceName} — {spapiConnectionData.marketplaceId}). Última comprobación: {new Date(spapiConnectionData.checkedAt).toLocaleString('es-ES')}.
+                  </div>
+                )}
+
+                {spapiError && (
+                  <div className="alert-banner alert-banner-danger" style={{ marginBottom: 0 }}>
+                    <strong>Error devuelto:</strong> {spapiError}
+                  </div>
+                )}
 
                 <div style={{ 
                   padding: '12px 14px', 
@@ -634,62 +595,24 @@ export default function Settings({ profile, onProfileUpdate }) {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600, color: 'var(--text-primary)' }}>
                     <Shield size={14} style={{ color: 'var(--accent-color)' }} />
-                    Procedimiento de Consentimiento Oficial
+                    Autenticación Directa por Servidor (Edge Function `sp-api`)
                   </div>
-                  <span>Al hacer clic en el botón inferior, se abrirá la página oficial de consentimiento de Amazon. Tras autorizar, Amazon registrará el enlace con tu ERP de forma protegida.</span>
+                  <span>
+                    La conexión utiliza el <code>refresh_token</code> de auto-autorización almacenado de forma segura en los secrets del servidor de Supabase para obtener el <code>access_token</code> en LWA y consultar <code>GET /sellers/v1/marketplaceParticipations</code>. Ningún secreto se almacena en el navegador ni en <code>localStorage</code>.
+                  </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {spapiError && (
-                    <div className="alert-banner alert-banner-danger" style={{ marginBottom: 0 }}>
-                      {spapiError}
-                    </div>
-                  )}
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary" 
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
-                  >
-                    <ExternalLink size={16} /> Iniciar Autorización Oficial en Amazon
-                  </button>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary" 
-                      onClick={handleConfirmAuthorization}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.825rem' }}
-                      title="Si utilizaste el botón Authorize dentro de Develop Apps en Seller Central"
-                    >
-                      <CheckCircle2 size={15} style={{ color: 'var(--success-color)' }} /> Confirmar Autorizado
-                    </button>
-
-                    {spapiStatus !== 'disconnected' && (
-                      <button 
-                        type="button" 
-                        className="btn btn-danger" 
-                        onClick={handleDisconnect}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.825rem' }}
-                      >
-                        <Trash2 size={14} /> Desconectar
-                      </button>
-                    )}
-                  </div>
-
-                  {spapiStatus === 'connected' && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={handleRealSpApiSync}
-                      disabled={syncingRealSpApi}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', borderColor: 'rgba(16, 185, 129, 0.4)', color: 'var(--success-color)' }}
-                    >
-                      <RefreshCw size={15} className={syncingRealSpApi ? 'animate-spin' : ''} />
-                      {syncingRealSpApi ? 'Sincronizando con Amazon SP-API...' : 'Sincronizar Inventario Real FBA Ahora'}
-                    </button>
-                  )}
-                </div>
-              </form>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={verifySpApiStatus}
+                  disabled={checkingSpApi}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
+                >
+                  <RefreshCw size={16} className={checkingSpApi ? 'animate-spin' : ''} />
+                  {checkingSpApi ? 'Comprobando estado en Amazon SP-API...' : 'Comprobar Estado de Conexión SP-API'}
+                </button>
+              </div>
             </div>
           </div>
 

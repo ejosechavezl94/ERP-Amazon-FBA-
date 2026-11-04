@@ -177,18 +177,60 @@ export async function runSpApiSimulation() {
 }
 
 /**
- * Invoca la Edge Function segura `amazon-spapi-sync` en Supabase
- * para verificar la conexión real con Amazon SP-API o sincronizar el inventario FBA real.
+ * Invoca la Edge Function segura `sp-api` en Supabase (acción `status`)
+ * que obtiene el access_token LWA con el refresh_token del servidor y consulta
+ * GET https://sellingpartnerapi-eu.amazon.com/sellers/v1/marketplaceParticipations.
  */
-export async function invokeRealSpApiSync(supabase, { action = 'check_connection', region = 'sellercentral.amazon.es', marketplaceId = 'A1RKKUPIHCS9HS' } = {}) {
+export async function checkSpApiConnectionStatus(supabase) {
+  const fallbackCheckedAt = new Date().toISOString();
   if (!supabase) {
-    throw new Error('Cliente de Supabase no inicializado.');
+    return {
+      connected: false,
+      status: 'Error',
+      checkedAt: fallbackCheckedAt,
+      error: 'Cliente de Supabase no inicializado.'
+    };
   }
-  const { data, error } = await supabase.functions.invoke('amazon-spapi-sync', {
-    body: { action, region, marketplaceId }
-  });
-  if (error) {
-    throw new Error(error.message || 'Error al conectar con la función amazon-spapi-sync en Supabase');
+
+  try {
+    const { data, error } = await supabase.functions.invoke('sp-api', {
+      body: { action: 'status' }
+    });
+
+    if (error) {
+      let detailError = error.message || 'Error al invocar la Edge Function sp-api';
+      if (error.context && typeof error.context.json === 'function') {
+        const errBody = await error.context.json().catch(() => null);
+        if (errBody?.error) detailError = errBody.error;
+      }
+      return {
+        connected: false,
+        status: 'Error',
+        checkedAt: fallbackCheckedAt,
+        error: detailError
+      };
+    }
+
+    return {
+      connected: Boolean(data?.connected),
+      status: data?.connected ? 'Conectado' : (data?.status || 'Error'),
+      marketplaceId: data?.marketplaceId || 'A1RKKUPIHCS9HS',
+      marketplaceName: data?.marketplaceName || 'Amazon.es',
+      domainName: data?.domainName || 'www.amazon.es',
+      countryCode: data?.countryCode || 'ES',
+      defaultCurrencyCode: data?.defaultCurrencyCode || 'EUR',
+      isParticipating: data?.isParticipating ?? null,
+      hasSuspendedListings: data?.hasSuspendedListings ?? null,
+      participations: data?.participations || [],
+      checkedAt: data?.checkedAt || fallbackCheckedAt,
+      error: data?.error || null
+    };
+  } catch (err) {
+    return {
+      connected: false,
+      status: 'Error',
+      checkedAt: fallbackCheckedAt,
+      error: err?.message || 'Error de red al comprobar el estado de Amazon SP-API.'
+    };
   }
-  return data;
 }
