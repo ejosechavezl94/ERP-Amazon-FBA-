@@ -24,6 +24,7 @@ function App() {
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
     if (typeof window === 'undefined') return false;
     return (
+      sessionStorage.getItem('fba_password_recovery_active') === 'true' ||
       window.location.hash.includes('type=recovery') ||
       window.location.search.includes('type=recovery') ||
       window.location.pathname === '/reset-password'
@@ -68,7 +69,8 @@ function App() {
   // 1. Session and Auth State management with 2FA check
   useEffect(() => {
     if (!isConfigured) return;
-    const isRecoveryUrl =
+    const checkIsRecoveryActive = () =>
+      sessionStorage.getItem('fba_password_recovery_active') === 'true' ||
       window.location.hash.includes('type=recovery') ||
       window.location.search.includes('type=recovery') ||
       window.location.pathname === '/reset-password';
@@ -78,10 +80,12 @@ function App() {
         setSession(session);
         fetchUserProfile(session.user.id);
         
-        if (!isRecoveryUrl) {
+        if (checkIsRecoveryActive()) {
+          setIsPasswordRecovery(true);
+        } else {
           // MFA check in background
           supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
-            if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+            if (!checkIsRecoveryActive() && assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
               setSession(null);
               setProfile(null);
             }
@@ -96,6 +100,7 @@ function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (_event === 'PASSWORD_RECOVERY') {
+        sessionStorage.setItem('fba_password_recovery_active', 'true');
         setIsPasswordRecovery(true);
         if (session) {
           setSession(session);
@@ -108,10 +113,12 @@ function App() {
         setSession(session);
         fetchUserProfile(session.user.id);
 
-        if (!isRecoveryUrl) {
+        if (checkIsRecoveryActive()) {
+          setIsPasswordRecovery(true);
+        } else {
           // MFA check in background
           supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
-            if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+            if (!checkIsRecoveryActive() && assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
               setSession(null);
               setProfile(null);
             }
@@ -311,6 +318,7 @@ function App() {
       <Auth
         recoveryMode={isPasswordRecovery}
         onRecoveryComplete={(sess) => {
+          sessionStorage.removeItem('fba_password_recovery_active');
           setIsPasswordRecovery(false);
           if (
             window.location.pathname === '/reset-password' ||

@@ -59,6 +59,14 @@ export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryCo
   const [recoveryMfaCode, setRecoveryMfaCode] = useState('');
 
   useEffect(() => {
+    const urlErr = sessionStorage.getItem('fba_auth_url_error');
+    if (urlErr) {
+      sessionStorage.removeItem('fba_auth_url_error');
+      setError('El enlace del correo ha expirado o ya fue utilizado. Por favor introduce tu correo y pulsa "¿Olvidaste tu contraseña?" para recibir uno nuevo.');
+    }
+  }, []);
+
+  useEffect(() => {
     if (!recoveryMode) return;
     let mounted = true;
     const checkRecoveryMfa = async () => {
@@ -77,8 +85,12 @@ export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryCo
       }
     };
     checkRecoveryMfa();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkRecoveryMfa();
+    });
     return () => {
       mounted = false;
+      subscription.unsubscribe();
     };
   }, [recoveryMode]);
 
@@ -245,8 +257,20 @@ export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryCo
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword
       });
-      if (updateError) throw updateError;
+      if (updateError) {
+        if (updateError.message && updateError.message.toLowerCase().includes('aal2')) {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const verified = factors?.all?.find(f => f.status === 'verified');
+          if (verified) {
+            setRecoveryNeedsMfa(true);
+            setRecoveryFactorId(verified.id);
+          }
+          throw new Error('Tu cuenta tiene 2FA activo: introduce el código de 6 dígitos de tu autenticador para guardar la nueva contraseña.');
+        }
+        throw updateError;
+      }
 
+      sessionStorage.removeItem('fba_password_recovery_active');
       setMessage('¡Contraseña restablecida con éxito! Accediendo al portal...');
       const { data: { session } } = await supabase.auth.getSession();
       setTimeout(() => {
@@ -371,6 +395,26 @@ export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryCo
                   disabled={loading}
                 >
                   {loading ? 'Guardando nueva contraseña...' : 'Guardar Nueva Contraseña'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    sessionStorage.removeItem('fba_password_recovery_active');
+                    await supabase.auth.signOut();
+                    if (onRecoveryComplete) onRecoveryComplete(null);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    marginTop: '4px'
+                  }}
+                >
+                  ← Volver a Iniciar Sesión
                 </button>
               </form>
             ) : (
