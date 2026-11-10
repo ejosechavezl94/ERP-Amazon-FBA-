@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, ShieldAlert, KeyRound } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -37,7 +37,7 @@ const TestimonialCard = ({ testimonial, delay }) => (
   </div>
 );
 
-export default function Auth({ onAuthSuccess }) {
+export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryComplete }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -49,6 +49,38 @@ export default function Auth({ onAuthSuccess }) {
   const [showMfa, setShowMfa] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
   const [mfaFactorId, setMfaFactorId] = useState('');
+
+  // Password Recovery states
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [recoveryNeedsMfa, setRecoveryNeedsMfa] = useState(false);
+  const [recoveryFactorId, setRecoveryFactorId] = useState('');
+  const [recoveryMfaCode, setRecoveryMfaCode] = useState('');
+
+  useEffect(() => {
+    if (!recoveryMode) return;
+    let mounted = true;
+    const checkRecoveryMfa = async () => {
+      try {
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+          const { data: factors } = await supabase.auth.mfa.listFactors();
+          const verified = factors?.all?.find(f => f.status === 'verified');
+          if (mounted && verified) {
+            setRecoveryNeedsMfa(true);
+            setRecoveryFactorId(verified.id);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking MFA for password recovery:', err);
+      }
+    };
+    checkRecoveryMfa();
+    return () => {
+      mounted = false;
+    };
+  }, [recoveryMode]);
 
   const defaultHeroImage = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80";
   const defaultTestimonials = [
@@ -164,10 +196,10 @@ export default function Auth({ onAuthSuccess }) {
     setLoading(true);
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: window.location.origin,
       });
       if (resetError) throw resetError;
-      setMessage('Se ha enviado un correo para restablecer tu contraseña.');
+      setMessage('Se ha enviado un correo con el enlace seguro para restablecer tu contraseña.');
     } catch (err) {
       setError(err.message || 'Error al solicitar restablecimiento de contraseña');
     } finally {
@@ -175,20 +207,78 @@ export default function Auth({ onAuthSuccess }) {
     }
   };
 
+  const handleRecoverySubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setMessage('');
 
+    if (newPassword.length < 8) {
+      setError('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError('Las contraseñas no coinciden. Verifica ambos campos.');
+      return;
+    }
+    if (recoveryNeedsMfa && recoveryMfaCode.length !== 6) {
+      setError('Introduce el código 2FA de 6 dígitos de tu aplicación autenticadora para autorizar el cambio.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Elevate session to AAL2 first if user has 2FA enabled
+      if (recoveryNeedsMfa && recoveryFactorId) {
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: recoveryFactorId
+        });
+        if (challengeError) throw challengeError;
+
+        const { error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: recoveryFactorId,
+          challengeId: challengeData.id,
+          code: recoveryMfaCode
+        });
+        if (verifyError) throw verifyError;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (updateError) throw updateError;
+
+      setMessage('¡Contraseña restablecida con éxito! Accediendo al portal...');
+      const { data: { session } } = await supabase.auth.getSession();
+      setTimeout(() => {
+        if (onRecoveryComplete) {
+          onRecoveryComplete(session);
+        } else if (onAuthSuccess && session) {
+          onAuthSuccess(session);
+        }
+      }, 900);
+    } catch (err) {
+      setError(err.message || 'Error al actualizar la contraseña. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="signin-container">
-      {/* Left column: sign-in/sign-up form */}
+      {/* Left column: sign-in or password recovery form */}
       <section className="signin-left">
         <div className="signin-form-wrapper">
           <div className="signin-form-inner">
             <div>
               <h1 className="animate-element animate-delay-100 signin-title">
-                <span className="font-light tracking-tighter">FBA Portal</span>
+                <span className="font-light tracking-tighter">
+                  {recoveryMode ? 'Nueva Contraseña' : 'FBA Portal'}
+                </span>
               </h1>
               <p className="animate-element animate-delay-200 signin-desc">
-                Accede a tu cuenta de administración y gestiona tu catálogo FBA
+                {recoveryMode
+                  ? 'Define una nueva contraseña segura para tu cuenta de administración'
+                  : 'Accede a tu cuenta de administración y gestiona tu catálogo FBA'}
               </p>
             </div>
 
@@ -204,7 +294,88 @@ export default function Auth({ onAuthSuccess }) {
               </div>
             )}
 
-            <form className="signin-form-inner" onSubmit={handleAuth} style={{ gap: '16px' }}>
+            {recoveryMode ? (
+              <form className="signin-form-inner" onSubmit={handleRecoverySubmit} style={{ gap: '16px' }}>
+                <div>
+                  <label className="signin-label">Nueva Contraseña (mín. 8 caracteres)</label>
+                  <GlassInputWrapper>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Introduce tu nueva contraseña segura"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="glass-input"
+                        style={{ paddingRight: '48px' }}
+                        minLength={8}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          color: 'var(--text-tertiary)'
+                        }}
+                      >
+                        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </GlassInputWrapper>
+                </div>
+
+                <div>
+                  <label className="signin-label">Confirmar Nueva Contraseña</label>
+                  <GlassInputWrapper>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="Repite la nueva contraseña"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="glass-input"
+                      minLength={8}
+                      required
+                    />
+                  </GlassInputWrapper>
+                </div>
+
+                {recoveryNeedsMfa && (
+                  <div>
+                    <label className="signin-label">Código 2FA de tu Autenticador (6 dígitos)</label>
+                    <GlassInputWrapper>
+                      <input
+                        type="text"
+                        placeholder="000000"
+                        value={recoveryMfaCode}
+                        onChange={(e) => setRecoveryMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="glass-input"
+                        maxLength={6}
+                        style={{ letterSpacing: '0.25em', fontWeight: 700, textAlign: 'center' }}
+                        required
+                      />
+                    </GlassInputWrapper>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="signin-btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Guardando nueva contraseña...' : 'Guardar Nueva Contraseña'}
+                </button>
+              </form>
+            ) : (
+              <>
+                <form className="signin-form-inner" onSubmit={handleAuth} style={{ gap: '16px' }}>
               <div className="animate-element animate-delay-300">
                 <label className="signin-label">Correo Electrónico</label>
                 <GlassInputWrapper>
@@ -293,6 +464,8 @@ export default function Auth({ onAuthSuccess }) {
             <p className="animate-element animate-delay-900" style={{ textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
               Acceso restringido únicamente a administradores autorizados.
             </p>
+              </>
+            )}
           </div>
         </div>
       </section>

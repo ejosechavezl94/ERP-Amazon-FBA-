@@ -21,6 +21,14 @@ import { Search, Bell, Check } from 'lucide-react';
 function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.location.hash.includes('type=recovery') ||
+      window.location.search.includes('type=recovery') ||
+      window.location.pathname === '/reset-password'
+    );
+  });
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -60,39 +68,57 @@ function App() {
   // 1. Session and Auth State management with 2FA check
   useEffect(() => {
     if (!isConfigured) return;
+    const isRecoveryUrl =
+      window.location.hash.includes('type=recovery') ||
+      window.location.search.includes('type=recovery') ||
+      window.location.pathname === '/reset-password';
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setSession(session);
         fetchUserProfile(session.user.id);
         
-        // MFA check in background
-        supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
-          if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-            setSession(null);
-            setProfile(null);
-          }
-        }).catch(err => {
-          console.error("Error checking MFA in background on session load:", err);
-        });
+        if (!isRecoveryUrl) {
+          // MFA check in background
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
+            if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+              setSession(null);
+              setProfile(null);
+            }
+          }).catch(err => {
+            console.error("Error checking MFA in background on session load:", err);
+          });
+        }
       }
     }).catch(err => {
       console.error("Error getting session on load:", err);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'PASSWORD_RECOVERY') {
+        setIsPasswordRecovery(true);
+        if (session) {
+          setSession(session);
+          fetchUserProfile(session.user.id);
+        }
+        return;
+      }
+
       if (session) {
         setSession(session);
         fetchUserProfile(session.user.id);
 
-        // MFA check in background
-        supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
-          if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
-            setSession(null);
-            setProfile(null);
-          }
-        }).catch(err => {
-          console.error("Error checking MFA in background on auth state change:", err);
-        });
+        if (!isRecoveryUrl) {
+          // MFA check in background
+          supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data: assurance }) => {
+            if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+              setSession(null);
+              setProfile(null);
+            }
+          }).catch(err => {
+            console.error("Error checking MFA in background on auth state change:", err);
+          });
+        }
       } else {
         setSession(null);
         setProfile(null);
@@ -280,11 +306,30 @@ function App() {
     );
   }
 
-  if (!session) {
-    return <Auth onAuthSuccess={(sess) => {
-      setSession(sess);
-      fetchUserProfile(sess.user.id);
-    }} />;
+  if (!session || isPasswordRecovery) {
+    return (
+      <Auth
+        recoveryMode={isPasswordRecovery}
+        onRecoveryComplete={(sess) => {
+          setIsPasswordRecovery(false);
+          if (
+            window.location.pathname === '/reset-password' ||
+            window.location.hash.includes('type=recovery') ||
+            window.location.search.includes('type=recovery')
+          ) {
+            window.history.replaceState({}, document.title, '/');
+          }
+          if (sess) {
+            setSession(sess);
+            fetchUserProfile(sess.user.id);
+          }
+        }}
+        onAuthSuccess={(sess) => {
+          setSession(sess);
+          fetchUserProfile(sess.user.id);
+        }}
+      />
+    );
   }
 
   return (

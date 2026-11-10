@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import { 
   Shield, KeyRound, Check, RefreshCw, Copy, Trash2, AlertCircle, 
   ExternalLink, Lock, CheckCircle2, ShoppingCart, Package, Bell, FileText, 
-  Zap
+  Zap, Eye, EyeOff
 } from 'lucide-react';
 import { SPAPI_ENDPOINTS_SPEC, runSpApiSimulation, checkSpApiConnectionStatus } from '../services/spapiService';
 
@@ -33,6 +33,17 @@ export default function Settings({ profile, onProfileUpdate }) {
   const [mfaError, setMfaError] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Password change state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordMfaCode, setPasswordMfaCode] = useState('');
+  const [needsMfaForPassword, setNeedsMfaForPassword] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [copiedPassword, setCopiedPassword] = useState(false);
+
   const checkMfaStatus = async () => {
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();
@@ -43,9 +54,16 @@ export default function Settings({ profile, onProfileUpdate }) {
       if (verified) {
         setMfaEnabled(true);
         setMfaFactor(verified);
+        const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (assurance && assurance.nextLevel === 'aal2' && assurance.currentLevel !== 'aal2') {
+          setNeedsMfaForPassword(true);
+        } else {
+          setNeedsMfaForPassword(false);
+        }
       } else {
         setMfaEnabled(false);
         setMfaFactor(null);
+        setNeedsMfaForPassword(false);
       }
     } catch (err) {
       console.error('Error listing MFA factors:', err);
@@ -109,6 +127,88 @@ export default function Settings({ profile, onProfileUpdate }) {
       setProfileError(err.message || 'Error al actualizar el perfil');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGeneratePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*+-=';
+    const array = new Uint32Array(16);
+    window.crypto.getRandomValues(array);
+    let generated = 'Aa1!';
+    for (let i = 4; i < 16; i++) {
+      generated += chars[array[i] % chars.length];
+    }
+    setNewPassword(generated);
+    setConfirmPassword(generated);
+    setShowNewPassword(true);
+    setPasswordError('');
+    setPasswordMessage('');
+  };
+
+  const handleCopyPassword = () => {
+    if (!newPassword) return;
+    navigator.clipboard.writeText(newPassword);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2000);
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordMessage('');
+    setPasswordError('');
+
+    if (newPassword.length < 8) {
+      setPasswordError('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden. Verifica ambos campos.');
+      return;
+    }
+    if (needsMfaForPassword && passwordMfaCode.length !== 6) {
+      setPasswordError('Introduce el código 2FA de 6 dígitos de tu autenticador para confirmar el cambio.');
+      return;
+    }
+
+    setUpdatingPassword(true);
+    try {
+      // Elevate session to AAL2 if user has 2FA enabled and session is currently AAL1
+      if (needsMfaForPassword && mfaFactor?.id) {
+        const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+          factorId: mfaFactor.id
+        });
+        if (challengeError) throw challengeError;
+
+        const { error: verifyError } = await supabase.auth.mfa.verify({
+          factorId: mfaFactor.id,
+          challengeId: challengeData.id,
+          code: passwordMfaCode
+        });
+        if (verifyError) throw verifyError;
+        setNeedsMfaForPassword(false);
+        setPasswordMfaCode('');
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        if (error.message && error.message.toLowerCase().includes('aal2')) {
+          setNeedsMfaForPassword(true);
+          throw new Error('Tu cuenta tiene 2FA activo: introduce tu código de 6 dígitos para autorizar el cambio de contraseña.');
+        }
+        throw error;
+      }
+
+      setPasswordMessage('¡Contraseña actualizada con éxito! Tu nueva contraseña segura ya está activa.');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordMfaCode('');
+    } catch (err) {
+      setPasswordError(err.message || 'Error al cambiar la contraseña.');
+    } finally {
+      setUpdatingPassword(false);
     }
   };
 
@@ -819,6 +919,113 @@ export default function Settings({ profile, onProfileUpdate }) {
                 {loading ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </form>
+
+            {/* Password Change Section */}
+            <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <h3 className="card-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.05rem' }}>
+                  <Lock size={17} style={{ color: 'var(--accent-color)' }} /> Cambiar Contraseña
+                </h3>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={handleGeneratePassword}
+                    style={{ fontSize: '0.75rem', padding: '5px 10px' }}
+                  >
+                    <KeyRound size={13} /> Generar segura
+                  </button>
+                  {newPassword && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleCopyPassword}
+                      style={{ fontSize: '0.75rem', padding: '5px 10px' }}
+                    >
+                      {copiedPassword ? <Check size={13} /> : <Copy size={13} />}
+                      {copiedPassword ? 'Copiada' : 'Copiar'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {passwordMessage && <div className="alert-banner alert-banner-success">{passwordMessage}</div>}
+              {passwordError && <div className="alert-banner alert-banner-danger">{passwordError}</div>}
+
+              <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Nueva Contraseña (mínimo 8 caracteres) *</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      className="form-input"
+                      placeholder="Introduce una nueva contraseña segura"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      minLength={8}
+                      style={{ paddingRight: '42px' }}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Confirmar Nueva Contraseña *</label>
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    className="form-input"
+                    placeholder="Repite la nueva contraseña"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    minLength={8}
+                    required
+                  />
+                </div>
+
+                {needsMfaForPassword && (
+                  <div className="form-group">
+                    <label className="form-label">Código 2FA de 6 dígitos (requerido por tener 2FA activo) *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="000000"
+                      value={passwordMfaCode}
+                      onChange={(e) => setPasswordMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      maxLength={6}
+                      style={{ letterSpacing: '0.2em', fontWeight: 700, textAlign: 'center' }}
+                      required
+                    />
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ alignSelf: 'flex-start' }}
+                  disabled={updatingPassword}
+                >
+                  {updatingPassword ? 'Actualizando contraseña...' : 'Actualizar Contraseña'}
+                </button>
+              </form>
+            </div>
           </div>
 
           {/* Security & 2FA Card */}

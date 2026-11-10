@@ -96,11 +96,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 2. Read SP-API secrets exclusively from project environment
-    const clientId = Deno.env.get("SPAPI_CLIENT_ID")?.trim();
-    const clientSecret = Deno.env.get("SPAPI_CLIENT_SECRET")?.trim();
-    const refreshToken = Deno.env.get("SPAPI_REFRESH_TOKEN")?.trim();
-    const marketplaceId = Deno.env.get("SPAPI_MARKETPLACE_ID")?.trim() || "A1RKKUPIHCS9HS";
+    // 2. Read SP-API secrets exclusively from project environment (strip accidental quotes/spaces)
+    const cleanSecret = (val?: string) =>
+      val ? val.trim().replace(/^["']+|["']+$/g, "").trim() : "";
+
+    const clientId = cleanSecret(Deno.env.get("SPAPI_CLIENT_ID"));
+    const clientSecret = cleanSecret(Deno.env.get("SPAPI_CLIENT_SECRET"));
+    const refreshToken = cleanSecret(Deno.env.get("SPAPI_REFRESH_TOKEN"));
+    const marketplaceId = cleanSecret(Deno.env.get("SPAPI_MARKETPLACE_ID")) || "A1RKKUPIHCS9HS";
 
     const missingSecrets: string[] = [];
     if (!clientId) missingSecrets.push("SPAPI_CLIENT_ID");
@@ -121,6 +124,28 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Validate format prefixes (without ever leaking secret values)
+    const formatHints: string[] = [];
+    if (clientId.startsWith("amzn1.sp.solution")) {
+      formatHints.push(
+        "En SPAPI_CLIENT_ID has pegado el 'ID de la aplicación' (amzn1.sp.solution...). Debes pegar el 'ID de cliente' de Credenciales de LWA (empieza por amzn1.application-oa2-client...)."
+      );
+    } else if (!clientId.startsWith("amzn1.application-oa2-client")) {
+      formatHints.push(
+        "SPAPI_CLIENT_ID no tiene el formato esperado (debe empezar por amzn1.application-oa2-client...)."
+      );
+    }
+    if (clientSecret.startsWith("amzn1.application-oa2-client") || clientSecret.startsWith("amzn1.sp.solution")) {
+      formatHints.push(
+        "En SPAPI_CLIENT_SECRET has pegado un ID en lugar del 'Secreto del cliente' LWA (debe empezar por amzn1.oa2-cs.v1...)."
+      );
+    }
+    if (!refreshToken.startsWith("Atzr|")) {
+      formatHints.push(
+        "SPAPI_REFRESH_TOKEN no tiene el formato esperado (debe empezar por Atzr|...)."
+      );
+    }
+
     // Parse action (defaults to "status")
     let action = "status";
     if (req.method === "POST") {
@@ -129,15 +154,16 @@ Deno.serve(async (req: Request) => {
     }
 
     // 3. Exchange refresh token for LWA access token (with in-memory caching)
-    const lwa = await getLwaAccessToken(clientId!, clientSecret!, refreshToken!);
+    const lwa = await getLwaAccessToken(clientId, clientSecret, refreshToken);
     if (lwa.error || !lwa.accessToken) {
+      const hintSuffix = formatHints.length > 0 ? ` — Diagnóstico: ${formatHints.join(" ")}` : "";
       return new Response(
         JSON.stringify({
           connected: false,
           status: "Error LWA",
           marketplaceId,
           checkedAt,
-          error: `Amazon LWA: ${lwa.error}`,
+          error: `Amazon LWA: ${lwa.error}${hintSuffix}`,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
