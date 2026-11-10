@@ -96,6 +96,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const ALLOWED_PARTNER_EMAILS = ["ejosechavezl18@gmail.com", "josh.rg6@gmail.com"];
+    const userEmail = (userData.user.email || "").toLowerCase().trim();
+    if (!ALLOWED_PARTNER_EMAILS.includes(userEmail)) {
+      return new Response(
+        JSON.stringify({
+          connected: false,
+          status: "Acceso denegado",
+          checkedAt,
+          error: "Acceso denegado: esta cuenta no pertenece a los socios autorizados del ERP.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // 2. Read SP-API secrets exclusively from project environment (strip accidental quotes/spaces)
     const cleanSecret = (val?: string) =>
       val ? val.trim().replace(/^["']+|["']+$/g, "").trim() : "";
