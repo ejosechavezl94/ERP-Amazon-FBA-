@@ -358,7 +358,8 @@ export default function PurchaseOrders() {
           <p style={{ margin: 0, fontSize: '0.875rem' }}>Crea un nuevo pedido para empezar a registrar mercancía en tránsito.</p>
         </div>
       ) : (
-        <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+        <>
+        <div className="table-container desktop-only-table" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
           <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
@@ -479,6 +480,142 @@ export default function PurchaseOrders() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards View (<= 768px) */}
+        <div className="inventory-mobile-cards">
+          {filteredPOs.map(po => {
+            const totalUnits = po.items && Array.isArray(po.items)
+              ? po.items.reduce((sum, l) => sum + Number(l.quantity || 0), 0)
+              : po.quantity;
+            return (
+              <div key={po.id} className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                        PO-{po.order_number}
+                      </span>
+                      <span style={{
+                        fontSize: '0.65rem',
+                        padding: '2px 6px',
+                        borderRadius: '10px',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        color: '#f59e0b'
+                      }}>
+                        Amazon FBA
+                      </span>
+                      {po.fba_shipment_id && (
+                        <span style={{
+                          fontSize: '0.65rem',
+                          padding: '2px 6px',
+                          borderRadius: '6px',
+                          fontFamily: 'var(--font-mono)',
+                          background: 'var(--bg-tertiary)',
+                          color: 'var(--text-secondary)',
+                          border: '1px solid var(--border-color)'
+                        }}>
+                          {po.fba_shipment_id}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Proveedor: <span style={{ color: 'var(--text-primary)' }}>{po.suppliers?.company_name || 'Sin proveedor'}</span>
+                    </div>
+                  </div>
+                  <select
+                    className="form-select"
+                    value={po.status}
+                    onChange={(e) => handleUpdateStatus(po, e.target.value)}
+                    style={{
+                      padding: '6px 10px',
+                      width: 'auto',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: po.status === 'Recibido' || po.status === 'Cerrado' ? 'rgba(16, 185, 129, 0.15)' : 'var(--surface-color)',
+                      color: po.status === 'Recibido' || po.status === 'Cerrado' ? '#10b981' : 'var(--text-primary)',
+                      cursor: 'pointer',
+                      flexShrink: 0
+                    }}
+                  >
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Producción">Producción</option>
+                    <option value="Inspección">Inspección</option>
+                    <option value="Enviado">Enviado</option>
+                    <option value="Aduanas">Aduanas</option>
+                    <option value="Recibido">Recibido</option>
+                    <option value="Cerrado">Cerrado</option>
+                  </select>
+                </div>
+
+                {/* Items List */}
+                <div style={{ background: 'var(--surface-color)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  {po.items && Array.isArray(po.items) && po.items.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {po.items.map((line, idx) => {
+                        const prod = products.find(p => p.id === line.productId);
+                        return (
+                          <div key={idx} style={{ fontSize: '0.8rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-color)' }}>[{prod?.sku_internal || 'N/A'}]</strong> {prod?.name || 'Desconocido'}
+                            </span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, flexShrink: 0 }}>{line.quantity} uds</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                        <strong style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-color)' }}>[{po.products?.sku_internal || 'N/A'}]</strong> {po.products?.name}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.82rem' }}>{totalUnits} uds</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Summary 3-col Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Unidades</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', marginTop: '2px' }}>{totalUnits} uds</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Costo Total</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)', marginTop: '2px' }}>{formatCurrency(po.total_cost)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Llegada Est.</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{po.estimated_arrival || 'Sin definir'}</div>
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: '8px', paddingTop: '2px' }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => openEditModal(po)}
+                    style={{ flex: 1, justifyContent: 'center', borderRadius: '10px', height: '38px', fontSize: '0.82rem', fontWeight: 600 }}
+                  >
+                    <Edit2 size={14} /> Editar Pedido
+                  </button>
+                  <button
+                    className="btn btn-secondary btn-sm btn-icon-only"
+                    onClick={() => handleDelete(po.id)}
+                    style={{ borderRadius: '10px', width: '38px', height: '38px' }}
+                    aria-label="Eliminar pedido"
+                  >
+                    <Trash2 size={15} style={{ color: '#ef4444' }} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        </>
       )}
 
       {/* Add / Edit Modal */}

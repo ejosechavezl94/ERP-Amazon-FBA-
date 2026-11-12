@@ -240,7 +240,8 @@ export default function SalesPage() {
           <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>No hay transacciones registradas en este periodo.</p>
         </div>
       ) : (
-        <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+        <>
+        <div className="table-container desktop-only-table" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
           <table className="g-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead>
               <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
@@ -304,6 +305,88 @@ export default function SalesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards View (<= 768px) */}
+        <div className="inventory-mobile-cards">
+          {sales.map((s) => {
+            const unitPrice = s.products?.target_price || 0;
+            const totalRevenue = s.quantity * unitPrice;
+            return (
+              <div key={s.id} className="card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                      <span style={{
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        color: 'var(--text-primary)',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(245, 158, 11, 0.25)'
+                      }}>
+                        {s.products?.sku_internal || 'N/A'}
+                      </span>
+                      <span style={{
+                        fontSize: '0.65rem',
+                        padding: '2px 8px',
+                        borderRadius: '10px',
+                        textTransform: 'uppercase',
+                        fontWeight: 700,
+                        background: 'rgba(245, 158, 11, 0.15)',
+                        color: '#f59e0b'
+                      }}>
+                        Amazon FBA
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        {s.sale_date}
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                      {s.products?.name || 'Producto'}
+                    </div>
+                    {s.amazon_order_id && (
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)', marginTop: '3px' }}>
+                        Pedido Amazon: #{s.amazon_order_id}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    className="g-icon-btn"
+                    onClick={() => setSaleToDelete(s.id)}
+                    aria-label="Eliminar venta"
+                    style={{ borderRadius: '8px', minWidth: '36px', minHeight: '36px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                  >
+                    <Trash2 size={15} style={{ color: '#ef4444' }} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: 'var(--bg-tertiary)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Cantidad</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginTop: '2px' }}>{s.quantity} uds</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Precio Unit.</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{fmt(unitPrice)}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Total Ingreso</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.95rem', color: '#10b981', marginTop: '2px' }}>{fmt(totalRevenue)}</div>
+                  </div>
+                </div>
+
+                {s.notes && (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+                    {s.notes}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        </>
       )}
 
       {/* Register Sale Modal */}

@@ -236,147 +236,286 @@ export default function Products() {
           <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Prueba ajustando los filtros o añade un nuevo SKU al catálogo.</p>
         </div>
       ) : (
-        <div className="table-container" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
-          <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-            <thead>
-              <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU FBA</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>ASIN / FNSKU</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Marca</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Coste Ud.</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>PVP Amazon</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Tarifas FBA</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Beneficio Neto</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Estado</th>
-                <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map(p => {
-                const cost = Number(p.cost_manufacturing) || 0;
-                const price = Number(p.target_price) || 0;
-                const { totalAmazonFees, netProfit, netMarginPct } = calculateFbaUnitMetrics({
-                  price,
-                  cost,
-                  fbaFee: p.fba_fee || 0,
-                  referralFeePct: p.referral_fee_pct ?? 15
-                });
+        <>
+          <div className="table-container desktop-only-table" style={{ borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
+            <table className="table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+              <thead>
+                <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>SKU FBA</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>ASIN / FNSKU</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Producto & Marca</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Coste Ud.</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>PVP Amazon</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Tarifas FBA</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Beneficio Neto</th>
+                  <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Estado</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.map(p => {
+                  const cost = Number(p.cost_manufacturing) || 0;
+                  const price = Number(p.target_price) || 0;
+                  const { totalAmazonFees, netProfit, netMarginPct } = calculateFbaUnitMetrics({
+                    price,
+                    cost,
+                    fbaFee: p.fba_fee || 0,
+                    referralFeePct: p.referral_fee_pct ?? 15
+                  });
 
-                return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s ease' }}>
-                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.85rem' }}>
-                      <span style={{ 
-                        background: 'rgba(245, 158, 11, 0.08)', 
-                        color: 'var(--text-primary)', 
-                        padding: '4px 8px', 
-                        borderRadius: '6px',
-                        border: '1px solid rgba(245, 158, 11, 0.2)'
-                      }}>
-                        {p.sku_internal}
-                      </span>
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-                        {p.asin_amazon ? (
-                          <a 
-                            href={`https://www.amazon.es/dp/${p.asin_amazon}`} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            style={{ 
-                              display: 'inline-flex', 
-                              alignItems: 'center', 
-                              gap: '4px',
+                  return (
+                    <tr key={p.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s ease' }}>
+                      <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, fontSize: '0.85rem' }}>
+                        <span style={{ 
+                          background: 'rgba(245, 158, 11, 0.08)', 
+                          color: 'var(--text-primary)', 
+                          padding: '4px 8px', 
+                          borderRadius: '6px',
+                          border: '1px solid rgba(245, 158, 11, 0.2)'
+                        }}>
+                          {p.sku_internal}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                          {p.asin_amazon ? (
+                            <a 
+                              href={`https://www.amazon.es/dp/${p.asin_amazon}`} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              style={{ 
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                gap: '4px',
+                                fontFamily: 'var(--font-mono)', 
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                color: 'var(--accent-color)',
+                                textDecoration: 'none',
+                                padding: '2px 7px',
+                                borderRadius: '6px',
+                                background: 'var(--surface-color)',
+                                border: '1px solid var(--border-color)'
+                              }}
+                            >
+                              {p.asin_amazon} ↗
+                            </a>
+                          ) : (
+                            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>Sin ASIN</span>
+                          )}
+                          {p.fnsku && (
+                            <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                              FNSKU: {p.fnsku}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{p.name}</div>
+                        {p.brand && (
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                            Marca: <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{p.brand}</span>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {formatCurrency(cost)}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {formatCurrency(price)}
+                      </td>
+                      <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#f59e0b', fontWeight: 600 }}>-{formatCurrency(totalAmazonFees)}</span>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                            FBA: {formatCurrency(p.fba_fee || 0)} + {p.referral_fee_pct ?? 15}%
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        {price > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: netProfit >= 0 ? '#10b981' : '#ef4444' }}>
+                              {formatCurrency(netProfit)}
+                            </span>
+                            <span style={{ 
                               fontFamily: 'var(--font-mono)', 
-                              fontSize: '0.8rem',
+                              fontSize: '0.72rem',
                               fontWeight: 600,
-                              color: 'var(--accent-color)',
-                              textDecoration: 'none',
-                              padding: '2px 7px',
-                              borderRadius: '6px',
-                              background: 'var(--surface-color)',
-                              border: '1px solid var(--border-color)'
-                            }}
+                              color: netMarginPct >= 25 ? '#10b981' : netMarginPct >= 12 ? '#f59e0b' : '#ef4444',
+                              background: netMarginPct >= 25 ? 'rgba(16, 185, 129, 0.1)' : netMarginPct >= 12 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                              padding: '2px 6px',
+                              borderRadius: '6px'
+                            }}>
+                              {netMarginPct.toFixed(1)}% neto
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span className={`badge ${
+                          p.status === 'Active' ? 'badge-success' : 
+                          p.status === 'Draft' ? 'badge-neutral' : 'badge-danger'
+                        }`} style={{ borderRadius: '20px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600 }}>
+                          {p.status === 'Active' ? 'Activo' : p.status === 'Draft' ? 'Borrador' : 'Archivado'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(p)} aria-label="Editar producto" style={{ borderRadius: '8px' }}>
+                            <Edit2 size={14} />
+                          </button>
+                          <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => setProductToDelete(p.id)} aria-label="Eliminar producto" style={{ borderRadius: '8px' }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards View (iOS Native Experience) */}
+          <div className="inventory-mobile-cards">
+            {filteredProducts.map(p => {
+              const cost = Number(p.cost_manufacturing) || 0;
+              const price = Number(p.target_price) || 0;
+              const { totalAmazonFees, netProfit, netMarginPct } = calculateFbaUnitMetrics({
+                price,
+                cost,
+                fbaFee: p.fba_fee || 0,
+                referralFeePct: p.referral_fee_pct ?? 15
+              });
+
+              return (
+                <div
+                  key={`mob-prod-${p.id}`}
+                  className="card"
+                  style={{
+                    padding: '16px',
+                    borderRadius: '16px',
+                    backgroundColor: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '12px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700,
+                          fontSize: '0.78rem',
+                          background: 'rgba(245, 158, 11, 0.1)',
+                          color: 'var(--text-primary)',
+                          padding: '2px 7px',
+                          borderRadius: '5px',
+                          border: '1px solid rgba(245, 158, 11, 0.25)'
+                        }}>
+                          {p.sku_internal}
+                        </span>
+                        {p.asin_amazon && (
+                          <a
+                            href={`https://www.amazon.es/dp/${p.asin_amazon}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ fontSize: '0.75rem', color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', textDecoration: 'none', fontWeight: 600 }}
                           >
                             {p.asin_amazon} ↗
                           </a>
-                        ) : (
-                          <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>Sin ASIN</span>
                         )}
                         {p.fnsku && (
-                          <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
-                            FNSKU: {p.fnsku}
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                            {p.fnsku}
                           </span>
                         )}
                       </div>
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{p.name}</div>
-                      {p.brand && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                          Marca: <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{p.brand}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {formatCurrency(cost)}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {formatCurrency(price)}
-                    </td>
-                    <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span style={{ color: '#f59e0b', fontWeight: 600 }}>-{formatCurrency(totalAmazonFees)}</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                          FBA: {formatCurrency(p.fba_fee || 0)} + {p.referral_fee_pct ?? 15}%
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      {price > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: netProfit >= 0 ? '#10b981' : '#ef4444' }}>
-                            {formatCurrency(netProfit)}
-                          </span>
-                          <span style={{ 
-                            fontFamily: 'var(--font-mono)', 
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            color: netMarginPct >= 25 ? '#10b981' : netMarginPct >= 12 ? '#f59e0b' : '#ef4444',
-                            background: netMarginPct >= 25 ? 'rgba(16, 185, 129, 0.1)' : netMarginPct >= 12 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            padding: '2px 6px',
-                            borderRadius: '6px'
-                          }}>
-                            {netMarginPct.toFixed(1)}% neto
-                          </span>
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span className={`badge ${
-                        p.status === 'Active' ? 'badge-success' : 
-                        p.status === 'Draft' ? 'badge-neutral' : 'badge-danger'
-                      }`} style={{ borderRadius: '20px', padding: '4px 10px', fontSize: '0.75rem', fontWeight: 600 }}>
-                        {p.status === 'Active' ? 'Activo' : p.status === 'Draft' ? 'Borrador' : 'Archivado'}
+                      <span style={{ fontWeight: 700, fontSize: '0.98rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                        {p.name}
                       </span>
-                    </td>
-                    <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm btn-icon-only" onClick={() => openEditModal(p)} aria-label="Editar producto" style={{ borderRadius: '8px' }}>
-                          <Edit2 size={14} />
-                        </button>
-                        <button className="btn btn-danger btn-sm btn-icon-only" onClick={() => setProductToDelete(p.id)} aria-label="Eliminar producto" style={{ borderRadius: '8px' }}>
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      {p.brand && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          Marca: <strong style={{ color: 'var(--text-primary)' }}>{p.brand}</strong>
+                        </span>
+                      )}
+                    </div>
+
+                    <span className={`badge ${
+                      p.status === 'Active' ? 'badge-success' :
+                      p.status === 'Draft' ? 'badge-neutral' : 'badge-danger'
+                    }`} style={{ borderRadius: '20px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 600, flexShrink: 0 }}>
+                      {p.status === 'Active' ? 'Activo' : p.status === 'Draft' ? 'Borrador' : 'Archivado'}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '8px',
+                    padding: '10px 12px',
+                    background: 'var(--surface-color)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color)'
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>PVP Amazon</span>
+                      <strong style={{ fontSize: '0.95rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '2px' }}>
+                        {formatCurrency(price)}
+                      </strong>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Coste: {formatCurrency(cost)}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Tarifas FBA</span>
+                      <strong style={{ fontSize: '0.92rem', fontFamily: 'var(--font-mono)', color: '#f59e0b', marginTop: '2px' }}>
+                        -{formatCurrency(totalAmazonFees)}
+                      </strong>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>{p.referral_fee_pct ?? 15}% ref.</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Benef. Neto</span>
+                      <strong style={{ fontSize: '0.95rem', fontFamily: 'var(--font-mono)', color: netProfit >= 0 ? '#10b981' : '#ef4444', marginTop: '2px' }}>
+                        {price > 0 ? formatCurrency(netProfit) : '—'}
+                      </strong>
+                      {price > 0 && (
+                        <span style={{ fontSize: '0.68rem', fontWeight: 600, color: netMarginPct >= 25 ? '#10b981' : netMarginPct >= 12 ? '#f59e0b' : '#ef4444' }}>
+                          {netMarginPct.toFixed(1)}% neto
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', paddingTop: '2px' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => openEditModal(p)}
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', minHeight: '38px', borderRadius: '10px', fontWeight: 600 }}
+                    >
+                      <Edit2 size={14} /> Editar SKU
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => setProductToDelete(p.id)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', minHeight: '38px', padding: '0 14px', borderRadius: '10px', fontWeight: 600 }}
+                      aria-label="Eliminar producto"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {/* Add / Edit Modal */}
