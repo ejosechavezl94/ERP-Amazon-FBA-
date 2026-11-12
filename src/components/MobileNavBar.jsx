@@ -26,7 +26,6 @@ export default function MobileNavBar({
   const secondaryMenu = [
     { id: 'products', label: 'Catálogo de Productos', icon: Package, desc: 'SKUs, ASINs y precios' },
     { id: 'orders', label: 'Pedidos de Compra (PO)', icon: ShoppingCart, desc: 'Órdenes a fábrica' },
-    { id: 'suppliers', label: 'Proveedores', icon: Users, desc: 'Directorio y contactos' },
     { id: 'batches', label: 'Lotes de Producción', icon: Layers, desc: 'Seguimiento de lotes' },
     { id: 'tasks', label: 'Tareas Operativas', icon: CheckSquare, desc: 'Kanban y pendientes' },
     { id: 'settings', label: 'Conexión SP-API & Ajustes', icon: SettingsIcon, desc: 'OAuth Amazon y 2FA', badge: 'SP-API' },

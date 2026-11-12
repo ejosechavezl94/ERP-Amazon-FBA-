@@ -9,7 +9,6 @@ import MobileNavBar from './components/MobileNavBar';
 const Products = React.lazy(() => import('./components/Products'));
 const Inventory = React.lazy(() => import('./components/Inventory'));
 const Batches = React.lazy(() => import('./components/Batches'));
-const Suppliers = React.lazy(() => import('./components/Suppliers'));
 const PurchaseOrders = React.lazy(() => import('./components/PurchaseOrders'));
 const Settings = React.lazy(() => import('./components/Settings'));
 const SalesPage = React.lazy(() => import('./components/SalesPage'));
@@ -595,7 +594,6 @@ function App() {
             {currentTab === 'products' && <Products />}
             {currentTab === 'inventory' && <Inventory />}
             {currentTab === 'batches' && <Batches />}
-            {currentTab === 'suppliers' && <Suppliers />}
             {currentTab === 'orders' && <PurchaseOrders />}
             {currentTab === 'tasks' && <Tasks />}
             {currentTab === 'sales' && <SalesPage />}

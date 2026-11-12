@@ -53,9 +53,8 @@ export default function SessionNavBar({
       ]
     },
     {
-      title: 'COMPRAS Y PROVEEDORES',
+      title: 'COMPRAS',
       items: [
-        { id: 'suppliers', label: 'Proveedores', icon: Users },
         { id: 'orders', label: 'Pedidos PO', icon: ShoppingCart }
       ]
     },

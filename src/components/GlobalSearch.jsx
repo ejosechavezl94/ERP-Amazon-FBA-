@@ -120,7 +120,7 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
           <input 
             type="text" 
             className="search-modal-input" 
-            placeholder="Buscar productos, proveedores, órdenes, tareas..."
+            placeholder="Buscar productos, órdenes PO, tareas..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             ref={inputRef}
@@ -156,22 +156,6 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
                     <span className="search-result-sub">SKU: {p.sku_internal} {p.brand ? `• Marca: ${p.brand}` : ''}</span>
                   </div>
                   <Package size={16} style={{ color: 'var(--text-tertiary)' }} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Suppliers Group */}
-          {results.suppliers.length > 0 && (
-            <div className="search-result-group">
-              <div className="search-result-group-title">Proveedores</div>
-              {results.suppliers.map(s => (
-                <div key={s.id} className="search-result-item" onClick={() => handleSelect('suppliers', s.id)}>
-                  <div className="search-result-text">
-                    <span className="search-result-main">{s.company_name}</span>
-                    <span className="search-result-sub">{s.contact_name ? `Contacto: ${s.contact_name} ` : ''}{s.country ? `• País: ${s.country}` : ''}</span>
-                  </div>
-                  <Globe size={16} style={{ color: 'var(--text-tertiary)' }} />
                 </div>
               ))}
             </div>

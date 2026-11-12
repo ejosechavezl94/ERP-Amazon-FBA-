@@ -142,7 +142,7 @@ export default function PurchaseOrders() {
       unit_cost: orderLines[0]?.unitCost || 0,
       total_cost: calculatedTotalCost,
       items: orderLines, // save dynamic array of objects to jsonb column
-      supplier_id: supplierId,
+      supplier_id: supplierId || null,
       order_date: orderDate,
       estimated_arrival: estArrival || null,
       status,
@@ -641,14 +641,13 @@ export default function PurchaseOrders() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Seleccionar Proveedor *</label>
+                  <label className="form-label">Proveedor (opcional)</label>
                   <select 
                     className="form-select" 
                     value={supplierId} 
                     onChange={(e) => setSupplierId(e.target.value)}
-                    required
                   >
-                    <option value="" disabled>Selecciona un proveedor...</option>
+                    <option value="">Sin proveedor asignado</option>
                     {suppliers.map(s => (
                       <option key={s.id} value={s.id}>{s.company_name}</option>
                     ))}
