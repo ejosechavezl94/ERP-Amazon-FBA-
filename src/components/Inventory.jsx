@@ -334,24 +334,15 @@ export default function Inventory() {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 600, 
-              color: 'var(--accent-color)', 
-              letterSpacing: '0.05em', 
-              textTransform: 'uppercase' 
-            }}>Logística 100% Amazon FBA</span>
-          </div>
-          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Inventario Amazon FBA</h1>
-          <p className="page-subtitle">Control en tiempo real de unidades Fulfillable, Reservadas, Inbound y No Aptas en centros logísticos de Amazon</p>
+          <h1 className="page-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Inventario FBA</h1>
+          <p className="page-subtitle">Unidades disponibles, reservadas y en tránsito en Amazon</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary btn-sm" onClick={handleSimulateSpApi} disabled={syncingSpApi} title="Simular sincronización con estructura oficial SP-API" style={{ borderRadius: '10px', borderColor: 'rgba(245, 158, 11, 0.35)', color: '#f59e0b' }}>
-            <Zap size={14} /> {syncingSpApi ? 'Sincronizando...' : 'Simular Sync SP-API'}
+            <Zap size={14} /> {syncingSpApi ? 'Sincronizando...' : 'Simular sync'}
           </button>
           <button className="btn btn-primary btn-sm" onClick={() => openSaleModal('')} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
-            <ShoppingCart size={14} /> Registrar Venta FBA
+            <ShoppingCart size={14} /> Registrar venta
           </button>
           <button className="btn btn-secondary btn-sm" onClick={activeTab === 'inventory' ? fetchInventory : fetchMovements} style={{ borderRadius: '10px' }}>
             <RefreshCw size={14} /> Actualizar

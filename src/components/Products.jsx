@@ -165,20 +165,11 @@ export default function Products() {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 600, 
-              color: 'var(--accent-color)', 
-              letterSpacing: '0.05em', 
-              textTransform: 'uppercase' 
-            }}>Catálogo FBA</span>
-          </div>
-          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Catálogo de Productos</h1>
-          <p className="page-subtitle">Gestiona SKUs, enlaces ASIN de Amazon y estructuras de costes de adquisición</p>
+          <h1 className="page-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Catálogo de productos</h1>
+          <p className="page-subtitle">SKUs, códigos ASIN y costes por unidad</p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)' }}>
-          <Plus size={16} /> Añadir Producto
+          <Plus size={16} /> Añadir producto
         </button>
       </div>
 

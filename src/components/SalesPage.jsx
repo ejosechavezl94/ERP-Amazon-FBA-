@@ -166,20 +166,10 @@ export default function SalesPage() {
       {/* Header */}
       <div className="gastos-header" style={{ marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 600, 
-              color: 'var(--accent-color)', 
-              letterSpacing: '0.05em', 
-              textTransform: 'uppercase' 
-            }}>Registro Comercial & ROI</span>
-          </div>
-          <h2 className="gastos-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em', display: "flex", alignItems: "center", gap: "10px" }}>
-            <ShoppingBag size={22} style={{ color: "var(--accent-color)" }} />
-            Historial de Ventas FBA
+          <h2 className="gastos-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em', margin: 0 }}>
+            Ventas FBA
           </h2>
-          <p className="gastos-sub">Pedidos de clientes gestionados por la red logística de Amazon FBA</p>
+          <p className="gastos-sub">Pedidos gestionados por Amazon FBA</p>
         </div>
         <div className="gastos-header-actions">
           <MonthPicker value={mes} onChange={setMes} />
@@ -191,21 +181,21 @@ export default function SalesPage() {
 
       {/* Metrics */}
       <div className="gastos-metrics" style={{ gap: '14px', marginBottom: '24px' }}>
-        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
-          <span className="gmetric-label" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Ingresos del Mes</span>
-          <span className="gmetric-value" style={{ color: "#10b981", fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 700 }}>{fmt(totalRevenue)}</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Ingresos del mes</span>
+          <span className="gmetric-value tabular-num" style={{ color: "var(--text-primary)", fontSize: 'clamp(1.3rem, 3.5vw, 1.65rem)', fontWeight: 700 }}>{fmt(totalRevenue)}</span>
         </div>
-        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
-          <span className="gmetric-label" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Unidades Vendidas</span>
-          <span className="gmetric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 700 }}>{totalUnits} uds</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Unidades vendidas</span>
+          <span className="gmetric-value tabular-num" style={{ fontSize: 'clamp(1.3rem, 3.5vw, 1.65rem)', fontWeight: 700 }}>{totalUnits} uds</span>
         </div>
-        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
-          <span className="gmetric-label" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Beneficio Neto FBA Est.</span>
-          <span className="gmetric-value" style={{ color: 'var(--accent-color)', fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 700 }}>{fmt(totalProfit)}</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Beneficio neto est.</span>
+          <span className="gmetric-value tabular-num" style={{ color: '#10b981', fontSize: 'clamp(1.3rem, 3.5vw, 1.65rem)', fontWeight: 700 }}>{fmt(totalProfit)}</span>
         </div>
-        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
-          <span className="gmetric-label" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Ticket Medio</span>
-          <span className="gmetric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.2rem, 3.5vw, 1.5rem)', fontWeight: 700 }}>{fmt(averageTicket)}</span>
+        <div className="gmetric" style={{ background: 'var(--surface-color)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)', minWidth: 0 }}>
+          <span className="gmetric-label" style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Ticket medio</span>
+          <span className="gmetric-value tabular-num" style={{ fontSize: 'clamp(1.3rem, 3.5vw, 1.65rem)', fontWeight: 700 }}>{fmt(averageTicket)}</span>
         </div>
       </div>
 

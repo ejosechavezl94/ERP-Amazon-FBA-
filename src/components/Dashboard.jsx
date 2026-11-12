@@ -166,16 +166,15 @@ export default function Dashboard({ onNavigate }) {
       {/* Header with Title and Global Actions */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: 0 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px', flexWrap: 'wrap' }}>
-            <h1 className="page-title" style={{ margin: 0, fontSize: 'clamp(1.35rem, 4vw, 1.75rem)', fontWeight: 800, letterSpacing: '-0.03em' }}>Resumen Ejecutivo FBA</h1>
-            <span className="badge badge-success" style={{ fontSize: '0.65rem', padding: '2px 8px', letterSpacing: '0.05em', fontWeight: 700, flexShrink: 0 }}>EN VIVO</span>
-          </div>
-          <p className="page-subtitle" style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
-            Consola centralizada de ventas, inventario local/FBA y aprovisionamiento
+          <h1 className="page-title" style={{ margin: 0, fontSize: 'clamp(1.4rem, 4vw, 1.75rem)', fontWeight: 700, letterSpacing: '-0.025em' }}>
+            Resumen general
+          </h1>
+          <p className="page-subtitle" style={{ margin: '4px 0 0 0', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+            Ventas, inventario disponible y pedidos en curso
           </p>
         </div>
 
-        <div className="dashboard-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start' }}>
+        <div className="dashboard-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
           <div className="dashboard-month-wrap" style={{ display: 'flex', alignItems: 'center' }}>
             <MonthPicker value={mes} onChange={setMes} />
           </div>
@@ -191,10 +190,10 @@ export default function Dashboard({ onNavigate }) {
           <button 
             className="btn btn-primary btn-sm dashboard-newpo-btn" 
             onClick={() => onNavigate('orders')}
-            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 700, height: '38px', whiteSpace: 'nowrap' }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 600, height: '38px', whiteSpace: 'nowrap' }}
           >
             <ShoppingCart size={14} /> 
-            <span>Nuevo Pedido PO</span>
+            <span>Nuevo pedido PO</span>
           </button>
         </div>
       </div>
@@ -203,127 +202,77 @@ export default function Dashboard({ onNavigate }) {
       <div className="grid-cols-4" style={{ gap: '12px', marginBottom: 0 }}>
         
         {/* Metric 1: Ventas del Mes */}
-        <div className="card metric-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-              Ventas ({mes})
-            </span>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'var(--success-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TrendingUp size={15} style={{ color: '#10b981' }} />
-            </div>
-          </div>
-          <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {formatCurrency(metrics.totalSalesMonth)}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              Volumen:
-            </span>
-            <span className="badge badge-success" style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.68rem', padding: '1px 6px' }}>
-              {metrics.totalSalesMonthUnits} uds
-            </span>
-          </div>
+        <div className="card metric-card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '8px', minWidth: 0 }}>
+          <span className="metric-label" style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+            Ventas del mes
+          </span>
+          <span className="metric-value tabular-num" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {formatCurrency(metrics.totalSalesMonth)}
+          </span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+            {metrics.totalSalesMonthUnits} {metrics.totalSalesMonthUnits === 1 ? 'unidad vendida' : 'unidades vendidas'}
+          </span>
         </div>
 
         {/* Metric 2: Valor Total de Inventario */}
-        <div className="card metric-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-              Valor Inventario
-            </span>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Package size={15} style={{ color: 'var(--accent-color)' }} />
-            </div>
-          </div>
-          <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {formatCurrency(metrics.totalInventoryValue)}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <button 
-              onClick={() => onNavigate('inventory')} 
-              style={{ background: 'none', border: 'none', color: 'var(--accent-color)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', padding: 0, textAlign: 'left' }}
-            >
-              Local / FBA →
-            </button>
-          </div>
+        <div 
+          className="card metric-card" 
+          onClick={() => onNavigate('inventory')}
+          style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '8px', minWidth: 0, cursor: 'pointer' }}
+        >
+          <span className="metric-label" style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+            Valor de inventario
+          </span>
+          <span className="metric-value tabular-num" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {formatCurrency(metrics.totalInventoryValue)}
+          </span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+            Stock disponible en Amazon FBA
+          </span>
         </div>
 
         {/* Metric 3: Alertas de Stock Bajo / Reposición */}
-        <div className="card metric-card" style={{ 
-          padding: '16px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'space-between',
-          gap: '10px', 
-          minWidth: 0,
-          borderColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.35)' : 'var(--border-color)',
-          backgroundColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-secondary)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-              Stock Bajo
-            </span>
-            <div style={{ 
-              width: '28px', 
-              height: '28px', 
-              borderRadius: '8px', 
-              backgroundColor: metrics.lowStockCount > 0 ? 'var(--danger-light)' : 'var(--success-light)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <AlertTriangle size={15} style={{ color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--success-color)' }} />
-            </div>
-          </div>
-          <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {metrics.lowStockCount} {metrics.lowStockCount === 1 ? 'SKU' : 'SKUs'}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.72rem', color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-secondary)', fontWeight: 500 }}>
-              {metrics.lowStockCount > 0 ? 'Reordenar' : 'Stock óptimo'}
-            </span>
-            {metrics.lowStockCount > 0 && (
-              <button 
-                onClick={() => onNavigate('inventory')}
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '2px 8px', fontSize: '0.68rem', height: '22px' }}
-              >
-                Ver
-              </button>
-            )}
-          </div>
+        <div 
+          className="card metric-card" 
+          onClick={() => onNavigate('inventory')}
+          style={{ 
+            padding: '18px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'space-between',
+            gap: '8px', 
+            minWidth: 0,
+            cursor: 'pointer',
+            borderColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.35)' : 'var(--border-color)',
+            backgroundColor: metrics.lowStockCount > 0 ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-secondary)'
+          }}
+        >
+          <span className="metric-label" style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+            Stock bajo
+          </span>
+          <span className="metric-value tabular-num" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 700, color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-primary)', letterSpacing: '-0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {metrics.lowStockCount} {metrics.lowStockCount === 1 ? 'producto' : 'productos'}
+          </span>
+          <span style={{ fontSize: '0.78rem', color: metrics.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-tertiary)', fontWeight: 500 }}>
+            {metrics.lowStockCount > 0 ? 'Requiere reposición' : 'Niveles óptimos'}
+          </span>
         </div>
 
         {/* Metric 4: Pedidos PO Activos */}
-        <div className="card metric-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px', minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-            <span className="metric-label" style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
-              POs Activos
-            </span>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'rgba(14, 165, 233, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <ShoppingCart size={15} style={{ color: 'var(--info-color)' }} />
-            </div>
-          </div>
-          <div>
-            <span className="metric-value" style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(1.25rem, 3.5vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.04em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {metrics.activeOrdersCount} {metrics.activeOrdersCount === 1 ? 'pedido' : 'pedidos'}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', flexWrap: 'wrap', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              Tránsito:
-            </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', fontWeight: 700, color: 'var(--info-color)' }}>
-              {formatCurrency(metrics.recentExpenses)}
-            </span>
-          </div>
+        <div 
+          className="card metric-card" 
+          onClick={() => onNavigate('orders')}
+          style={{ padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '8px', minWidth: 0, cursor: 'pointer' }}
+        >
+          <span className="metric-label" style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+            Pedidos en curso
+          </span>
+          <span className="metric-value tabular-num" style={{ fontSize: 'clamp(1.4rem, 3.5vw, 1.85rem)', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {metrics.activeOrdersCount}
+          </span>
+          <span className="tabular-num" style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+            En tránsito: {formatCurrency(metrics.recentExpenses)}
+          </span>
         </div>
 
       </div>
@@ -383,15 +332,15 @@ export default function Dashboard({ onNavigate }) {
         <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Pedidos de Compra Recientes</h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>Últimas órdenes a proveedores registrados</p>
+              <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Pedidos de compra recientes</h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Últimas órdenes a proveedores</p>
             </div>
             <button 
               className="btn btn-secondary btn-sm" 
               onClick={() => onNavigate('orders')}
               style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
-              Ver todos →
+              Ver todos
             </button>
           </div>
 
@@ -446,15 +395,15 @@ export default function Dashboard({ onNavigate }) {
         <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Tareas Operativas Pendientes</h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>Prioridades asignadas en tu tablero Kanban</p>
+              <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Tareas pendientes</h3>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Prioridades operativas del equipo</p>
             </div>
             <button 
               className="btn btn-secondary btn-sm" 
               onClick={() => onNavigate('tasks')}
               style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}
             >
-              Tablero Kanban →
+              Ver tareas
             </button>
           </div>
 

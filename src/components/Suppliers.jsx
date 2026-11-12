@@ -129,20 +129,11 @@ export default function Suppliers() {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 600, 
-              color: 'var(--accent-color)', 
-              letterSpacing: '0.05em', 
-              textTransform: 'uppercase' 
-            }}>Directorio de Fabricación</span>
-          </div>
-          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Proveedores & Fabricantes</h1>
-          <p className="page-subtitle">Gestiona tu directorio de fabricantes e intermediarios de importación FBA</p>
+          <h1 className="page-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Proveedores</h1>
+          <p className="page-subtitle">Fabricantes y contactos de importación</p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
-          <Plus size={16} /> Añadir Proveedor
+          <Plus size={16} /> Añadir proveedor
         </button>
       </div>
 

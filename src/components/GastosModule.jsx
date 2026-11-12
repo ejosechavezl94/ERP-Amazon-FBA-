@@ -170,7 +170,7 @@ export default function GastosModule() {
           <span className="gmetric-value">{fmt(totalFijos)}</span>
         </div>
         <div className="gmetric">
-          <span className="gmetric-label">Gastos variables ({mes})</span>
+          <span className="gmetric-label">Gastos variables</span>
           <span className="gmetric-value">{fmt(totalVariables)}</span>
         </div>
         <div className="gmetric">

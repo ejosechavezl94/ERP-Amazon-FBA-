@@ -395,7 +395,6 @@ function App() {
             </div>
             <div className="mobile-brand-text">
               <span className="mobile-brand-title">Portal FBA</span>
-              <span className="mobile-brand-badge">PRO</span>
             </div>
           </button>
 

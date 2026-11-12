@@ -299,20 +299,11 @@ export default function PurchaseOrders() {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 600, 
-              color: 'var(--accent-color)', 
-              letterSpacing: '0.05em', 
-              textTransform: 'uppercase' 
-            }}>Gestión de Cadena de Suministro</span>
-          </div>
-          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Pedidos de Compra (PO)</h1>
-          <p className="page-subtitle">Gestiona la producción con proveedores, tránsito aduanero e ingresos de stock</p>
+          <h1 className="page-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Pedidos de compra (PO)</h1>
+          <p className="page-subtitle">Órdenes a proveedores, envíos en tránsito y recepciones</p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
-          <Plus size={16} /> Crear Pedido (PO)
+          <Plus size={16} /> Nuevo pedido PO
         </button>
       </div>
 

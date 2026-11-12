@@ -270,12 +270,9 @@ export default function Tasks() {
       {/* Executive Kanban Header */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: 0 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-            <h1 className="page-title" style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em' }}>Gestión Operativa FBA</h1>
-            <span className="badge badge-warning" style={{ fontSize: '0.68rem', padding: '3px 8px', letterSpacing: '0.05em', fontWeight: 700 }}>TABLERO KANBAN</span>
-          </div>
-          <p className="page-subtitle" style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
-            Rastrea en tiempo real el progreso de compras, inspecciones, producción y envíos a almacenes Amazon
+          <h1 className="page-title" style={{ margin: 0, fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Tareas operativas</h1>
+          <p className="page-subtitle" style={{ margin: '4px 0 0 0', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+            Seguimiento de compras, inspecciones y envíos a Amazon
           </p>
         </div>
 
