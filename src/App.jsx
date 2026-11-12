@@ -137,10 +137,14 @@ function App() {
     };
   }, []);
 
-  // 2. Light / Dark Mode Toggle
+  // 2. Light / Dark Mode Toggle + Dynamic iOS PWA Status Bar Theme Color
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', theme === 'light' ? '#ffffff' : '#0f1219');
+    }
   }, [theme]);
 
   const toggleTheme = () => {
@@ -369,10 +373,24 @@ function App() {
         {/* Top Header */}
         <header className="top-bar">
           <div className="mobile-brand-header">
-            <div className="mobile-brand-logo-wrap">
-              <img src="/amazon-logo.png" alt="Amazon FBA" className="mobile-brand-logo" />
+            <div className="mobile-brand-logo-wrap" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L3.5 6.5V17.5L12 22L20.5 17.5V6.5L12 2Z" fill="url(#fbaGradMobile)" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round"/>
+                <path d="M3.5 6.5L12 11L20.5 6.5" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 11V22" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7.75 4.25L16.25 8.75" stroke="#fde68a" strokeWidth="1.3" strokeLinecap="round"/>
+                <defs>
+                  <linearGradient id="fbaGradMobile" x1="3.5" y1="2" x2="20.5" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#f59e0b" stopOpacity="0.28"/>
+                    <stop offset="1" stopColor="#b45309" stopOpacity="0.45"/>
+                  </linearGradient>
+                </defs>
+              </svg>
             </div>
-            <span className="mobile-brand-title">Portal FBA</span>
+            <div className="mobile-brand-text">
+              <span className="mobile-brand-title">Portal FBA</span>
+              <span className="mobile-brand-badge">PRO</span>
+            </div>
           </div>
 
           <button className="search-trigger" onClick={() => setIsSearchOpen(true)}>

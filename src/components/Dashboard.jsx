@@ -176,20 +176,22 @@ export default function Dashboard({ onNavigate }) {
         </div>
 
         <div className="dashboard-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', width: '100%', justifyContent: 'flex-start' }}>
-          <MonthPicker value={mes} onChange={setMes} />
+          <div className="dashboard-month-wrap" style={{ display: 'flex', alignItems: 'center' }}>
+            <MonthPicker value={mes} onChange={setMes} />
+          </div>
           <button 
-            className="btn btn-secondary btn-sm" 
+            className="btn btn-secondary btn-sm dashboard-refresh-btn" 
             onClick={fetchDashboardData}
             title="Actualizar datos del panel"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', height: '36px', whiteSpace: 'nowrap' }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '38px', whiteSpace: 'nowrap' }}
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 
             <span>Actualizar</span>
           </button>
           <button 
-            className="btn btn-primary btn-sm" 
+            className="btn btn-primary btn-sm dashboard-newpo-btn" 
             onClick={() => onNavigate('orders')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, height: '36px', whiteSpace: 'nowrap' }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontWeight: 700, height: '38px', whiteSpace: 'nowrap' }}
           >
             <ShoppingCart size={14} /> 
             <span>Nuevo Pedido PO</span>

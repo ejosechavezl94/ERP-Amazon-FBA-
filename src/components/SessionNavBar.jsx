@@ -101,28 +101,30 @@ export default function SessionNavBar({
           }}
         >
           <div style={{ 
-            width: '30px', 
-            height: '30px', 
-            borderRadius: '8px', 
-            backgroundColor: '#ffffff', 
+            width: '32px', 
+            height: '32px', 
+            borderRadius: '9px', 
+            background: 'linear-gradient(135deg, #181c26 0%, #0f1219 100%)', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
             flexShrink: 0,
             overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-            border: '1px solid var(--border-color)'
+            boxShadow: '0 2px 8px rgba(0,0,0,0.22)',
+            border: '1px solid rgba(245, 158, 11, 0.35)'
           }}>
-            <img 
-              src="/amazon-logo.png" 
-              alt="Amazon FBA Logo" 
-              style={{ 
-                width: '100%', 
-                height: '100%', 
-                objectFit: 'contain',
-                padding: '2px'
-              }} 
-            />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L3.5 6.5V17.5L12 22L20.5 17.5V6.5L12 2Z" fill="url(#fbaGradDesktop)" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round"/>
+              <path d="M3.5 6.5L12 11L20.5 6.5" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 11V22" stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7.75 4.25L16.25 8.75" stroke="#fde68a" strokeWidth="1.3" strokeLinecap="round"/>
+              <defs>
+                <linearGradient id="fbaGradDesktop" x1="3.5" y1="2" x2="20.5" y2="22" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#f59e0b" stopOpacity="0.28"/>
+                  <stop offset="1" stopColor="#b45309" stopOpacity="0.45"/>
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
           
           <div className="sidebar-text-container" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>

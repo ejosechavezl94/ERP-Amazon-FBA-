@@ -2107,29 +2107,39 @@ html, body {
   gap: 10px;
 }
 .mobile-brand-logo-wrap {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background-color: #ffffff;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #181c26 0%, #0f1219 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(245, 158, 11, 0.35);
   flex-shrink: 0;
 }
-.mobile-brand-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 2px;
+.mobile-brand-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .mobile-brand-title {
   font-weight: 800;
-  font-size: 1.05rem;
-  letter-spacing: -0.025em;
+  font-size: 1.08rem;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+.mobile-brand-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--accent-color);
+  border: 1px solid rgba(245, 158, 11, 0.28);
 }
 
 /* Mobile Bottom Tab Bar (iOS Style) */
@@ -2157,10 +2167,11 @@ html, body {
 
   .top-bar {
     height: auto !important;
-    min-height: 56px !important;
-    padding: calc(max(env(safe-area-inset-top, 47px), 47px) + 12px) 16px 12px 16px !important;
+    min-height: 54px !important;
+    padding: max(10px, env(safe-area-inset-top, 10px)) 16px 10px 16px !important;
     gap: 10px !important;
-    background-color: var(--bg-primary) !important;
+    background-color: var(--bg-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     position: relative;
@@ -2171,11 +2182,14 @@ html, body {
 
   .search-trigger {
     margin-left: auto !important;
-    width: 38px !important;
-    height: 38px !important;
+    width: 36px !important;
+    height: 36px !important;
     padding: 0 !important;
     border-radius: 50% !important;
     justify-content: center !important;
+    background-color: var(--bg-tertiary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
     flex-shrink: 0;
   }
   .search-shortcut, .search-trigger-text {
@@ -2213,13 +2227,43 @@ html, body {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 12px !important;
-    margin-bottom: 18px !important;
+    margin-bottom: 14px !important;
   }
 
   .page-header > .btn {
     width: 100%;
     justify-content: center;
     height: 42px;
+  }
+
+  /* Dashboard Mobile Action Controls Layout */
+  .dashboard-actions-row {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .dashboard-month-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .dashboard-month-wrap .month-picker-container,
+  .dashboard-month-wrap .month-picker-trigger {
+    width: 100% !important;
+    height: 40px !important;
+    justify-content: space-between !important;
+  }
+  .dashboard-refresh-btn {
+    height: 40px !important;
+    padding: 0 14px !important;
+  }
+  .dashboard-newpo-btn {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    height: 42px !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    border-radius: 10px !important;
   }
 
   .page-title {
@@ -2615,12 +2659,6 @@ html, body {
   .g-field select,
   .search-modal-input {
     font-size: 16px !important;
-  }
-  /* Safe-area top clearance for iPhone notch / Dynamic Island in PWA mode */
-  .top-bar {
-    padding-top: max(10px, env(safe-area-inset-top)) !important;
-    height: auto !important;
-    min-height: 56px;
   }
 }
 
