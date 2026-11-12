@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  LayoutDashboard, Package, TrendingUp, Users, ShoppingCart, 
+  LayoutDashboard, Package, TrendingUp, ShoppingCart, 
   CheckSquare, Settings as SettingsIcon, LogOut, Sun, Moon, 
   ChevronsUpDown, Layers, Wallet, DollarSign
 } from 'lucide-react';

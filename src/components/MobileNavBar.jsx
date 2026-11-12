@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, TrendingUp, DollarSign, Wallet, MoreHorizontal, 
-  Package, ShoppingCart, Users, Layers, CheckSquare, Settings as SettingsIcon,
+  Package, ShoppingCart, Layers, CheckSquare, Settings as SettingsIcon,
   Sun, Moon, LogOut, X, ChevronRight
 } from 'lucide-react';
 

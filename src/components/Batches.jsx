@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   Plus, Edit2, Trash2, Search, X, Check, RefreshCw, 
-  Layers, Package, Users, ShoppingCart, Calendar, Info 
+  Layers, Calendar 
 } from 'lucide-react';
 
 export default function Batches() {
   const [batches, setBatches] = useState([]);
   const [products, setProducts] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -19,7 +18,6 @@ export default function Batches() {
   // Form states
   const [batchNumber, setBatchNumber] = useState('');
   const [productId, setProductId] = useState('');
-  const [supplierId, setSupplierId] = useState('');
   const [orderId, setOrderId] = useState('');
   const [quantity, setQuantity] = useState(0);
   const [costUnit, setCostUnit] = useState(0);
@@ -41,7 +39,6 @@ export default function Batches() {
         .select(`
           *,
           products(id, name, sku_internal),
-          suppliers(id, company_name),
           purchase_orders!fk_batches_purchase_order(id, order_number)
         `)
         .order('created_at', { ascending: false });
@@ -50,13 +47,11 @@ export default function Batches() {
       // 2. Fetch all sales to perform FIFO sold calculations
       const { data: sData } = await supabase.from('sales').select('product_id, quantity');
       
-      // 3. Fetch products, suppliers, orders for dropdowns
+      // 3. Fetch products, orders for dropdowns
       const { data: pData } = await supabase.from('products').select('id, name, sku_internal');
-      const { data: supData } = await supabase.from('suppliers').select('id, company_name');
       const { data: ordData } = await supabase.from('purchase_orders').select('id, order_number');
 
       setProducts(pData || []);
-      setSuppliers(supData || []);
       setOrders(ordData || []);
 
       // Calculate sold units per batch using FIFO logic
@@ -101,7 +96,6 @@ export default function Batches() {
     setEditingBatch(null);
     setBatchNumber('');
     setProductId('');
-    setSupplierId('');
     setOrderId('');
     setQuantity(0);
     setCostUnit(0);
@@ -117,7 +111,6 @@ export default function Batches() {
     setEditingBatch(batch);
     setBatchNumber(batch.batch_number);
     setProductId(batch.product_id);
-    setSupplierId(batch.supplier_id || '');
     setOrderId(batch.purchase_order_id || '');
     setQuantity(batch.quantity);
     setCostUnit(batch.cost_unit);
@@ -136,7 +129,7 @@ export default function Batches() {
     const payload = {
       batch_number: batchNumber,
       product_id: productId,
-      supplier_id: supplierId || null,
+      supplier_id: null,
       purchase_order_id: orderId || null,
       quantity: parseInt(quantity) || 0,
       cost_unit: parseFloat(costUnit) || 0,
@@ -187,8 +180,7 @@ export default function Batches() {
     const matchesSearch = 
       b.batch_number.toLowerCase().includes(search.toLowerCase()) ||
       (b.products && b.products.name.toLowerCase().includes(search.toLowerCase())) ||
-      (b.products && b.products.sku_internal.toLowerCase().includes(search.toLowerCase())) ||
-      (b.suppliers && b.suppliers.company_name.toLowerCase().includes(search.toLowerCase()));
+      (b.products && b.products.sku_internal.toLowerCase().includes(search.toLowerCase()));
     return matchesSearch;
   });
 
@@ -198,9 +190,6 @@ export default function Batches() {
 
   // Metrics calculations
   const totalBatchesCount = batches.length;
-  const totalUnitsInitial = batches.reduce((acc, b) => acc + b.quantity, 0);
-  const totalUnitsSold = batches.reduce((acc, b) => acc + (b.sold_units || 0), 0);
-  const totalUnitsRemaining = totalUnitsInitial - totalUnitsSold;
 
   return (
     <div>
@@ -253,7 +242,6 @@ export default function Batches() {
               <tr>
                 <th>Lote</th>
                 <th>Producto</th>
-                <th>Proveedor</th>
                 <th>Unidades (Ini / Vend / Rest)</th>
                 <th>Fechas (Fab / Venc)</th>
                 <th>Costo Unit. / Total</th>
@@ -284,13 +272,6 @@ export default function Batches() {
                         <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{b.products?.name || 'Producto Desconocido'}</span>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>{b.products?.sku_internal}</span>
                       </div>
-                    </td>
-                    <td>
-                      {b.suppliers ? (
-                        <span style={{ fontSize: '0.85rem' }}>{b.suppliers.company_name}</span>
-                      ) : (
-                        <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', fontStyle: 'italic' }}>Sin asignar</span>
-                      )}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -391,33 +372,18 @@ export default function Batches() {
                   </select>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Proveedor</label>
-                    <select 
-                      className="form-select" 
-                      value={supplierId} 
-                      onChange={(e) => setSupplierId(e.target.value)}
-                    >
-                      <option value="">Ninguno</option>
-                      {suppliers.map(s => (
-                        <option key={s.id} value={s.id}>{s.company_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Pedido PO Asoc.</label>
-                    <select 
-                      className="form-select" 
-                      value={orderId} 
-                      onChange={(e) => setOrderId(e.target.value)}
-                    >
-                      <option value="">Ninguno</option>
-                      {orders.map(o => (
-                        <option key={o.id} value={o.id}>{o.order_number}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="form-group">
+                  <label className="form-label">Pedido PO Asoc.</label>
+                  <select 
+                    className="form-select" 
+                    value={orderId} 
+                    onChange={(e) => setOrderId(e.target.value)}
+                  >
+                    <option value="">Ninguno</option>
+                    {orders.map(o => (
+                      <option key={o.id} value={o.id}>PO-{o.order_number}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

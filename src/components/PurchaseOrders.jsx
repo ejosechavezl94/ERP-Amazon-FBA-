@@ -5,7 +5,6 @@ import { Plus, Edit2, Trash2, Search, X, Check, ShoppingCart, RefreshCw } from '
 export default function PurchaseOrders() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [products, setProducts] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -13,7 +12,6 @@ export default function PurchaseOrders() {
 
   // Form states
   const [orderNumber, setOrderNumber] = useState('');
-  const [supplierId, setSupplierId] = useState('');
   const [orderDate, setOrderDate] = useState(new Date().toISOString().split('T')[0]);
   const [estArrival, setEstArrival] = useState('');
   const [status, setStatus] = useState('Pendiente');
@@ -36,7 +34,7 @@ export default function PurchaseOrders() {
     try {
       const { data, error } = await supabase
         .from('purchase_orders')
-        .select('*, products(name, sku_internal), suppliers(company_name)')
+        .select('*, products(name, sku_internal)')
         .order('order_number', { ascending: false });
       if (error) throw error;
       setPurchaseOrders(data);
@@ -50,9 +48,7 @@ export default function PurchaseOrders() {
   const fetchDropdowns = async () => {
     try {
       const { data: pData } = await supabase.from('products').select('id, name, sku_internal').eq('status', 'Active');
-      const { data: sData } = await supabase.from('suppliers').select('id, company_name');
       setProducts(pData || []);
-      setSuppliers(sData || []);
     } catch (err) {
       console.error('Error fetching dropdowns:', err);
     }
@@ -61,7 +57,6 @@ export default function PurchaseOrders() {
   const openAddModal = () => {
     setEditingPO(null);
     setOrderNumber(Math.floor(1000 + Math.random() * 9000).toString());
-    setSupplierId(suppliers[0]?.id || '');
     setOrderLines([
       { productId: products[0]?.id || '', quantity: '', unitCost: '' }
     ]);
@@ -77,7 +72,6 @@ export default function PurchaseOrders() {
   const openEditModal = (po) => {
     setEditingPO(po);
     setOrderNumber(po.order_number);
-    setSupplierId(po.supplier_id);
     setOrderDate(po.order_date);
     setEstArrival(po.estimated_arrival || '');
     setStatus(po.status);
@@ -142,7 +136,7 @@ export default function PurchaseOrders() {
       unit_cost: orderLines[0]?.unitCost || 0,
       total_cost: calculatedTotalCost,
       items: orderLines, // save dynamic array of objects to jsonb column
-      supplier_id: supplierId || null,
+      supplier_id: null,
       order_date: orderDate,
       estimated_arrival: estArrival || null,
       status,
@@ -272,7 +266,7 @@ export default function PurchaseOrders() {
   const filteredPOs = purchaseOrders.filter(po => {
     const matchesSearch = 
       po.order_number.includes(search) ||
-      (po.suppliers && po.suppliers.company_name.toLowerCase().includes(search.toLowerCase()));
+      (po.fba_shipment_id && po.fba_shipment_id.toLowerCase().includes(search.toLowerCase()));
     
     // Check if search query matches any products inside order lines
     const matchesProduct = po.items && Array.isArray(po.items)
@@ -300,7 +294,7 @@ export default function PurchaseOrders() {
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
           <h1 className="page-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Pedidos de compra (PO)</h1>
-          <p className="page-subtitle">Órdenes a proveedores, envíos en tránsito y recepciones</p>
+          <p className="page-subtitle">Órdenes de producción, envíos en tránsito y recepciones</p>
         </div>
         <button className="btn btn-primary" onClick={openAddModal} style={{ boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)', borderRadius: '10px' }}>
           <Plus size={16} /> Nuevo pedido PO
@@ -326,7 +320,7 @@ export default function PurchaseOrders() {
           <input 
             type="text" 
             className="form-input" 
-            placeholder="Buscar por Nº de PO, proveedor, SKU..." 
+            placeholder="Buscar por Nº de PO, SKU o producto..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ paddingLeft: '40px', borderRadius: '10px', width: '100%' }}
@@ -356,7 +350,6 @@ export default function PurchaseOrders() {
               <tr style={{ background: 'var(--surface-color)', borderBottom: '1px solid var(--border-color)' }}>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Nº Pedido</th>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Productos / SKU</th>
-                <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Proveedor</th>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Unidades</th>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Costo Total</th>
                 <th style={{ padding: '14px 16px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Fecha Pedido</th>
@@ -412,7 +405,6 @@ export default function PurchaseOrders() {
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '14px 16px', fontWeight: 500, color: 'var(--text-primary)' }}>{po.suppliers?.company_name}</td>
                     <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{totalUnits} uds</td>
                     <td style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--text-primary)' }}>{formatCurrency(po.total_cost)}</td>
                     <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{po.order_date}</td>
@@ -487,8 +479,8 @@ export default function PurchaseOrders() {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      Proveedor: <span style={{ color: 'var(--text-primary)' }}>{po.suppliers?.company_name || 'Sin proveedor'}</span>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                      Fecha: {po.order_date}
                     </div>
                   </div>
                   <select
@@ -638,20 +630,6 @@ export default function PurchaseOrders() {
                       onChange={(e) => setFbaShipmentId(e.target.value)} 
                     />
                   </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Proveedor (opcional)</label>
-                  <select 
-                    className="form-select" 
-                    value={supplierId} 
-                    onChange={(e) => setSupplierId(e.target.value)}
-                  >
-                    <option value="">Sin proveedor asignado</option>
-                    {suppliers.map(s => (
-                      <option key={s.id} value={s.id}>{s.company_name}</option>
-                    ))}
-                  </select>
                 </div>
 
                 {/* Dinamic Order Lines Section */}

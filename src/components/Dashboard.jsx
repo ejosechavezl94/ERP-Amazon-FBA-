@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
-  TrendingUp, AlertTriangle, Package, ShoppingCart, 
+  AlertTriangle, ShoppingCart, 
   RefreshCw, Clock 
 } from 'lucide-react';
 import { MonthPicker } from './ui/Calendar';
@@ -52,7 +52,7 @@ export default function Dashboard({ onNavigate }) {
       // 2. Fetch Active Purchase Orders (not Recibido and not Cerrado)
       const { data: poData, error: poError } = await supabase
         .from('purchase_orders')
-        .select('*, products(name), suppliers(company_name)')
+        .select('*, products(name)')
         .order('created_at', { ascending: false });
       if (poError) throw poError;
 
@@ -99,7 +99,7 @@ export default function Dashboard({ onNavigate }) {
           generatedAlerts.push({
             id: `po-${po.id}`,
             type: 'danger',
-            message: `Pedido retrasado: PO-${po.order_number} de ${po.suppliers?.company_name || 'Proveedor'} (Llegada estimada: ${po.estimated_arrival})`,
+            message: `Pedido retrasado: PO-${po.order_number} (Llegada estimada: ${po.estimated_arrival})`,
             category: 'Pedido'
           });
         }
@@ -333,7 +333,7 @@ export default function Dashboard({ onNavigate }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <h3 className="card-title" style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>Pedidos de compra recientes</h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Últimas órdenes a proveedores</p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Últimas órdenes de aprovisionamiento</p>
             </div>
             <button 
               className="btn btn-secondary btn-sm" 
@@ -350,12 +350,11 @@ export default function Dashboard({ onNavigate }) {
             </div>
           ) : (
             <div className="table-container" style={{ borderRadius: 'var(--border-radius-sm)', border: '1px solid var(--border-color)', overflowX: 'auto', width: '100%', maxWidth: '100%' }}>
-              <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '420px' }}>
+              <table className="table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '340px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-tertiary)' }}>
                     <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>PO Nº</th>
                     <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>PRODUCTO</th>
-                    <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>PROVEEDOR</th>
                     <th style={{ textAlign: 'center', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>ESTADO</th>
                     <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '0.7rem', fontWeight: 700 }}>COSTO</th>
                   </tr>
@@ -368,9 +367,6 @@ export default function Dashboard({ onNavigate }) {
                       </td>
                       <td style={{ padding: '10px 12px', fontSize: '0.8rem', fontWeight: 500 }}>
                         {po.products?.name || '—'}
-                      </td>
-                      <td style={{ padding: '10px 12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                        {po.suppliers?.company_name || '—'}
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                         <span className={`badge ${

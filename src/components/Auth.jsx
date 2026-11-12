@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Eye, EyeOff, ShieldAlert, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, ShieldAlert } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -23,17 +23,6 @@ const GoogleIcon = () => (
 const GlassInputWrapper = ({ children }) => (
   <div className="glass-input-wrapper">
     {children}
-  </div>
-);
-
-const TestimonialCard = ({ testimonial, delay }) => (
-  <div className={`signin-testimonial-card animate-element ${delay}`}>
-    <img src={testimonial.avatarSrc} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '12px', flexShrink: 0 }} alt="avatar" />
-    <div style={{ fontSize: '0.85rem', lineHeight: '1.3' }}>
-      <p style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500, margin: 0, color: 'var(--text-primary)' }}>{testimonial.name}</p>
-      <p style={{ color: 'var(--text-tertiary)', margin: '2px 0 0 0', fontSize: '0.75rem' }}>{testimonial.handle}</p>
-      <p style={{ marginTop: '8px', color: 'var(--text-secondary)', margin: '8px 0 0 0' }}>{testimonial.text}</p>
-    </div>
   </div>
 );
 
@@ -95,20 +84,6 @@ export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryCo
   }, [recoveryMode]);
 
   const defaultHeroImage = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80";
-  const defaultTestimonials = [
-    {
-      avatarSrc: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80",
-      name: "Sofía Rodríguez",
-      handle: "@sofia_fba",
-      text: "Esta plataforma transformó la gestión de inventario y pedidos de nuestra tienda de Amazon. Imprescindible para escalar."
-    },
-    {
-      avatarSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&h=150&q=80",
-      name: "Alejandro Gómez",
-      handle: "@alegomez_dev",
-      text: "El tablero Kanban y la automatización de lotes/llegadas nos ahorran más de 10 horas de trabajo manual a la semana."
-    }
-  ];
 
   const handleAuth = async (e) => {
     e.preventDefault();

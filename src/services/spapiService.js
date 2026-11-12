@@ -112,7 +112,7 @@ export function calculateFbaUnitMetrics({ price = 0, cost = 0, fbaFee = 0, refer
   const numPrice = Number(price) || 0;
   const numCost = Number(cost) || 0;
   const numFbaFee = Number(fbaFee) || 0;
-  const numRefPct = Number(referralFeePct) ?? 15;
+  const numRefPct = Number.isNaN(Number(referralFeePct)) ? 15 : Number(referralFeePct);
 
   const referralFeeEur = numPrice > 0 ? +(numPrice * (numRefPct / 100)).toFixed(2) : 0;
   const totalAmazonFees = +(numFbaFee + referralFeeEur).toFixed(2);

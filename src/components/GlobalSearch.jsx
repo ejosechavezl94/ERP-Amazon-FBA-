@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
-import { Search, X, Package, Globe, ShoppingCart, CheckSquare, RefreshCw } from 'lucide-react';
+import { Search, X, Package, ShoppingCart, CheckSquare, RefreshCw } from 'lucide-react';
 
 export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState({
     products: [],
-    suppliers: [],
     orders: [],
     tasks: []
   });
@@ -17,7 +16,7 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
       setQuery('');
-      setResults({ products: [], suppliers: [], orders: [], tasks: [] });
+      setResults({ products: [], orders: [], tasks: [] });
     }
   }, [isOpen]);
 
@@ -33,7 +32,7 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults({ products: [], suppliers: [], orders: [], tasks: [] });
+      setResults({ products: [], orders: [], tasks: [] });
       return;
     }
 
@@ -57,16 +56,7 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
         .then(r => r.data || [])
         .catch(err => { console.error('Error searching products:', err); return []; });
 
-      // 2. Search suppliers
-      const sSearch = supabase
-        .from('suppliers')
-        .select('id, company_name, contact_name, country')
-        .or(`company_name.ilike."${searchTerm}",contact_name.ilike."${searchTerm}",country.ilike."${searchTerm}"`)
-        .limit(5)
-        .then(r => r.data || [])
-        .catch(err => { console.error('Error searching suppliers:', err); return []; });
-
-      // 3. Search purchase orders (standard ilike on order_number)
+      // 2. Search purchase orders (standard ilike on order_number)
       const oSearch = supabase
         .from('purchase_orders')
         .select('id, order_number, products(name)')
@@ -75,7 +65,7 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
         .then(r => r.data || [])
         .catch(err => { console.error('Error searching orders:', err); return []; });
 
-      // 4. Search tasks
+      // 3. Search tasks
       const tSearch = supabase
         .from('tasks')
         .select('id, title, status')
@@ -84,11 +74,10 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
         .then(r => r.data || [])
         .catch(err => { console.error('Error searching tasks:', err); return []; });
 
-      const [products, suppliers, orders, tasks] = await Promise.all([pSearch, sSearch, oSearch, tSearch]);
+      const [products, orders, tasks] = await Promise.all([pSearch, oSearch, tSearch]);
 
       setResults({
         products,
-        suppliers,
         orders,
         tasks
       });
@@ -99,7 +88,7 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
     }
   };
 
-  const handleSelect = (module, id) => {
+  const handleSelect = (module) => {
     onNavigate(module);
     onClose();
   };
@@ -108,7 +97,6 @@ export default function GlobalSearch({ isOpen, onClose, onNavigate }) {
 
   const totalResults = 
     results.products.length + 
-    results.suppliers.length + 
     results.orders.length + 
     results.tasks.length;
 

@@ -61,7 +61,7 @@ export function Calendar({
     }
   };
 
-  const handleSelectDay = (day, isCurrentMonth = true, offsetMonth = 0) => {
+  const handleSelectDay = (day, _isCurrentMonth = true, offsetMonth = 0) => {
     let targetMonth = currentMonth + offsetMonth;
     let targetYear = currentYear;
     if (targetMonth < 0) {
