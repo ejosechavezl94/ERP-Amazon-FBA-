@@ -372,7 +372,13 @@ function App() {
       <main className="main-content">
         {/* Top Header */}
         <header className="top-bar">
-          <div className="mobile-brand-header">
+          <button
+            type="button"
+            className="mobile-brand-header"
+            onClick={() => window.location.reload()}
+            title="Recargar Portal FBA"
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+          >
             <div className="mobile-brand-logo-wrap" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L3.5 6.5V17.5L12 22L20.5 17.5V6.5L12 2Z" fill="url(#fbaGradMobile)" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round"/>
@@ -391,7 +397,7 @@ function App() {
               <span className="mobile-brand-title">Portal FBA</span>
               <span className="mobile-brand-badge">PRO</span>
             </div>
-          </div>
+          </button>
 
           <button className="search-trigger" onClick={() => setIsSearchOpen(true)}>
             <Search size={14} />
