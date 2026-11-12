@@ -514,15 +514,9 @@ export default function Auth({ onAuthSuccess, recoveryMode = false, onRecoveryCo
         </div>
       </section>
 
-      {/* Right column: hero image + testimonials */}
+      {/* Right column: hero image */}
       <section className="signin-right">
         <div className="signin-hero-image" style={{ backgroundImage: `url(${defaultHeroImage})` }}></div>
-        <div className="signin-testimonials">
-          <TestimonialCard testimonial={defaultTestimonials[0]} delay="animate-delay-1000" />
-          <div style={{ display: 'flex' }} className="hidden xl:flex">
-            <TestimonialCard testimonial={defaultTestimonials[1]} delay="animate-delay-1200" />
-          </div>
-        </div>
       </section>
 
       <Dialog open={showMfa} onOpenChange={async (open) => {

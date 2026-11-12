@@ -263,17 +263,6 @@ export default function SalesPage() {
                   <td style={{ padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>{s.products?.name}</span>
-                      <span style={{ 
-                        fontSize: '0.65rem', 
-                        padding: '2px 8px', 
-                        borderRadius: '10px',
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        background: 'rgba(245, 158, 11, 0.15)',
-                        color: '#f59e0b'
-                      }}>
-                        Amazon FBA
-                      </span>
                       {s.amazon_order_id && (
                         <span style={{ fontSize: '0.72rem', fontFamily: 'var(--font-mono)', color: 'var(--text-tertiary)' }}>
                           #{s.amazon_order_id}
@@ -317,17 +306,6 @@ export default function SalesPage() {
                         border: '1px solid rgba(245, 158, 11, 0.25)'
                       }}>
                         {s.products?.sku_internal || 'N/A'}
-                      </span>
-                      <span style={{
-                        fontSize: '0.65rem',
-                        padding: '2px 8px',
-                        borderRadius: '10px',
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        background: 'rgba(245, 158, 11, 0.15)',
-                        color: '#f59e0b'
-                      }}>
-                        Amazon FBA
                       </span>
                       <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                         {s.sale_date}

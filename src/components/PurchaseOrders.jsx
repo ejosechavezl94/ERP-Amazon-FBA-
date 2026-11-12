@@ -377,33 +377,20 @@ export default function PurchaseOrders() {
                         <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                           PO-{po.order_number}
                         </span>
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        {po.fba_shipment_id && (
                           <span style={{ 
-                            fontSize: '0.65rem', 
+                            fontSize: '0.68rem', 
                             padding: '2px 6px', 
-                            borderRadius: '10px',
+                            borderRadius: '6px',
                             width: 'fit-content',
-                            textTransform: 'uppercase',
-                            fontWeight: 700,
-                            background: 'rgba(245, 158, 11, 0.15)',
-                            color: '#f59e0b'
+                            fontFamily: 'var(--font-mono)',
+                            background: 'var(--bg-tertiary)',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid var(--border-color)'
                           }}>
-                            Amazon FBA
+                            {po.fba_shipment_id}
                           </span>
-                          {po.fba_shipment_id && (
-                            <span style={{ 
-                              fontSize: '0.65rem', 
-                              padding: '2px 6px', 
-                              borderRadius: '6px',
-                              fontFamily: 'var(--font-mono)',
-                              background: 'var(--bg-tertiary)',
-                              color: 'var(--text-secondary)',
-                              border: '1px solid var(--border-color)'
-                            }}>
-                              {po.fba_shipment_id}
-                            </span>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </td>
                     <td style={{ padding: '14px 16px' }}>
@@ -485,17 +472,6 @@ export default function PurchaseOrders() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
                         PO-{po.order_number}
-                      </span>
-                      <span style={{
-                        fontSize: '0.65rem',
-                        padding: '2px 6px',
-                        borderRadius: '10px',
-                        textTransform: 'uppercase',
-                        fontWeight: 700,
-                        background: 'rgba(245, 158, 11, 0.15)',
-                        color: '#f59e0b'
-                      }}>
-                        Amazon FBA
                       </span>
                       {po.fba_shipment_id && (
                         <span style={{

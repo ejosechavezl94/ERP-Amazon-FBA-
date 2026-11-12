@@ -601,23 +601,6 @@ export default function Inventory() {
                                 <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
                                   {item.product_name || 'Sin nombre'}
                                 </span>
-                                <span 
-                                  title="Stock en centro logístico de Amazon FBA"
-                                  style={{ 
-                                    fontSize: '0.72rem', 
-                                    padding: '2px 8px',
-                                    borderRadius: '6px',
-                                    fontWeight: 700,
-                                    background: 'rgba(245, 158, 11, 0.15)',
-                                    color: '#f59e0b',
-                                    border: '1px solid rgba(245, 158, 11, 0.35)',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                >
-                                  <Package size={12} /> Amazon FBA
-                                </span>
                               </div>
                               <div style={{ display: 'flex', gap: '10px', fontSize: '0.75rem', color: 'var(--text-tertiary)', flexWrap: 'wrap' }}>
                                 {item.asin_amazon && <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-color)' }}>ASIN: {item.asin_amazon}</span>}
@@ -731,24 +714,6 @@ export default function Inventory() {
                           </div>
                           <span style={{ fontWeight: 700, fontSize: '0.98rem', color: 'var(--text-primary)', marginTop: '2px', lineHeight: 1.3 }}>
                             {item.product_name || 'Sin nombre'}
-                          </span>
-                        </div>
-
-                        <div>
-                          <span style={{ 
-                            fontSize: '0.72rem', 
-                            padding: '4px 8px', 
-                            borderRadius: '8px', 
-                            fontWeight: 700, 
-                            background: 'rgba(245, 158, 11, 0.18)', 
-                            color: '#f59e0b', 
-                            border: '1px solid rgba(245, 158, 11, 0.35)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            <Package size={12} /> FBA
                           </span>
                         </div>
                       </div>

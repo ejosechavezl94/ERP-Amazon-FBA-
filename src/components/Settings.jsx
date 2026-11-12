@@ -312,17 +312,8 @@ export default function Settings({ profile, onProfileUpdate }) {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <span style={{ 
-              fontSize: '0.75rem', 
-              fontWeight: 600, 
-              color: 'var(--accent-color)', 
-              letterSpacing: '0.05em', 
-              textTransform: 'uppercase' 
-            }}>Configuración del Sistema</span>
-          </div>
-          <h1 className="page-title" style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Configuración</h1>
-          <p className="page-subtitle">Gestiona la integración oficial con Amazon SP-API, perfil y seguridad corporativa</p>
+          <h1 className="page-title" style={{ fontSize: '1.65rem', fontWeight: 700, letterSpacing: '-0.025em' }}>Configuración</h1>
+          <p className="page-subtitle">Conexión con Amazon SP-API, perfil y seguridad de acceso</p>
         </div>
       </div>
 
